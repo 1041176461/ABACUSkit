@@ -1,11 +1,11 @@
 '''
 Date: 2021-03-16 20:34:00
 LastEditors: jiyuyang
-LastEditTime: 2021-04-20 15:39:40
+LastEditTime: 2021-04-28 18:06:07
 Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 '''
 
-from pyautotest.schedulers.data import CodeDefaultFields, CodeRunMode, JobDefaultFields
+from pyautotest.schedulers.data import Code, CodeRunMode, JobDefaultFields
 
 import os
 import json
@@ -176,64 +176,7 @@ def set_scheduler(
 
 	return sche._get_submit_command(submit_script)
 
-def configure_code(
-				cmdline_params=[],
-                stdin_name=None,
-                stdout_name=None,
-                stderr_name=None,
-                join_files=False,
-                withmpi=None,
-                code_uuid=None
-				):
-	"""
-	Configure cold information
-		cmdline_params: a list of strings with the command line arguments of the program to run. For example: mpirun cmdline_params[0] cmdline_params[1] ... < stdin > stdout. 
-        stdin_name: (optional) the name of the standard input file.  code.x < stdin_name
-        stdout_name: (optional) the name of the standard output file. code.x ... > stdout_name
-        stderr_name: (optional) a string, the name of the error file of the code.
-        join_files: If join_files=True, code.x ... > stdout_name 2>&1, if join_files=False, code.x ... > stdout_name 2> stderr_name
-        withmpi: if not None, executes the code with `withmpi` value (mpirun or another MPI installed on the remote computer)
-        code_uuid: the uuid of the cod
-	
-	return: a list of code information. [code_info_1, code_info_2, ...]
-	"""
-	code_info = CodeDefaultFields(
-		cmdline_params=cmdline_params,
-		stdin_name=stdin_name,
-		stdout_name=stdout_name,
-		stderr_name=stderr_name,
-		join_files=join_files,
-		withmpi=withmpi,
-		code_uuid=code_uuid
-	)
-	return [code_info]
-
-def run_line(codes_info):
-    """Return run lines
-    
-    :params codes_info: list of CodeDefaultFields object
-    """
-
-    list_of_runlines = []
-    for code_info in codes_info:
-        if code_info.withmpi:
-            command_to_exec = f'{code_info.withmpi} '+' '.join(code_info.cmdline_params)
-        else:
-            command_to_exec = ' '.join(code_info.cmdline_params)
-
-        stdin_str = f'< {code_info.stdin_name}' if code_info.stdin_name else ''
-        stdout_str = f'> {code_info.stdout_name}' if code_info.stdout_name else ''
-        if code_info.join_files:
-            stderr_str = '2>&1'
-        else:
-            stderr_str = f'2> {code_info.stderr_name}' if code_info.stderr_name else ''
-            
-        output_string = f'{command_to_exec} {stdin_str} {stdout_str} {stderr_str}'
-
-        list_of_runlines.append(output_string)
-    return list_of_runlines
-
-def submit_script(filename, line):
+def submit_script(filename, line, **kwargs):
     """Run with submit script
     
     :params filename: string of input file name
@@ -245,8 +188,14 @@ def submit_script(filename, line):
 
     job_resource = text["job_resource"]
     script_params = text["script_params"]
-    job_environment = text["job_environment"] #{"MKL_THREADING_LAYER":"GNU"} MKL_THREADING_LAYER=INTEL is incompatible with libgomp.so.1 library. See https://github.com/pytorch/pytorch/issues/37377
+    job_environment = text.pop("job_environment", None) #{"MKL_THREADING_LAYER":"GNU"} MKL_THREADING_LAYER=INTEL is incompatible with libgomp.so.1 library. See https://github.com/pytorch/pytorch/issues/37377
     cmdline_params = [line]
-    codes_info = configure_code(cmdline_params=cmdline_params)
+    codes_info = [Code(cmdline_params=cmdline_params,
+						stdin_name=kwargs.pop("stdin_name", None),
+						stdout_name=kwargs.pop("stdout_name", None),
+						stderr_name=kwargs.pop("stderr_name", None),
+						join_files=kwargs.pop("join_files", False),
+						withmpi=kwargs.pop("withmpi", None),
+						code_uuid=kwargs.pop("code_uuid", None))]
     submit_command = set_scheduler(codes_info=codes_info, job_environment=job_environment, **script_params, **job_resource)
     os.system(submit_command)

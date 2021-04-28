@@ -1,9 +1,11 @@
 '''
 Date: 2021-03-05 17:03:37
 LastEditors: jiyuyang
-LastEditTime: 2021-04-23 15:50:10
+LastEditTime: 2021-04-28 15:50:39
 Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 '''
+
+from pyautotest.schedulers.data import Code
 
 import os
 import re
@@ -31,12 +33,17 @@ class JobCalculation(abc.ABC):
         """Execute calculation
 
         :params dst: path of working directory
-        :params command: string to execute a scf calculation
+        :params command: string or `pyautotest.schedulers.data.Code` object to execute calculation
         """
 
         current_path = Path.cwd()
         os.chdir(dst)
-        os.system(command)
+        if isinstance(command, str):
+            os.system(command)
+        elif isinstance(command, Code):
+            os.system(command.run_line())
+        else:
+            raise TypeError("Type of `command` must be `str` or `pyautotest.schedulers.data.Code` object")
         os.chdir(current_path)
 
     @abc.abstractmethod

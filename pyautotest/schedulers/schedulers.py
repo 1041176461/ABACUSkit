@@ -1,12 +1,11 @@
 '''
 Date: 2021-02-11 17:35:09
 LastEditors: jiyuyang
-LastEditTime: 2021-04-05 12:00:30
+LastEditTime: 2021-04-28 14:39:14
 Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 '''
 
-from pyautotest.utils.script import run_line
-from pyautotest.schedulers.data import CodeDefaultFields, CodeRunMode, JobDefaultFields
+from pyautotest.schedulers.data import CodeRunMode, JobDefaultFields
 
 import abc
 
@@ -63,12 +62,12 @@ class Scheduler(abc.ABC):
     def _get_run_line(self, codes_info, codes_run_mode):
         """Return a string with the line to execute a specific code with specific arguments.
 
-        :parameter codes_info: a list of `CodeDefalutFields` objects. Each contains the information needed to run the code.
+        :parameter codes_info: a list of `Code` objects. Each contains the information needed to run the code.
         :parameter codes_run_mode: instance of `CodeRunMode` contains the information on how to launch the multiple codes.
         :return: string with format: [executable] [args] {[ < stdin ]} {[ < stdout ]} {[2>&1 | 2> stderr]}
         """
 
-        list_of_runlines = run_line(codes_info)      
+        list_of_runlines = [code.run_line() for code in codes_info]
 
         if codes_run_mode == CodeRunMode.PARALLEL:
             list_of_runlines.append('wait\n')

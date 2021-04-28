@@ -1,7 +1,7 @@
 '''
 Date: 2021-03-15 15:35:22
 LastEditors: jiyuyang
-LastEditTime: 2021-04-25 11:43:06
+LastEditTime: 2021-04-28 18:57:32
 Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 '''
 
@@ -15,13 +15,14 @@ class Run:
     """Ways to run Auto-test code"""
 
     @classmethod 
-    def single_run(cls, src="", dst="", version=[], save_files=True):
+    def single_run(cls, src="", dst="", version=[], save_files=True, external_command=''):
         """This function tests an example individually, this example directory should have a configuration file named `config.json`.
         
         :params src: path of library
         :params dst: path of working directory
         :params version: executable file list
         :params save_files: if save input files of last calculation, or not
+        :params external_command: other non-ABACUS code needed
         """
 
         config_file = os.path.join(src, "config.json")
@@ -29,13 +30,13 @@ class Run:
             print(f"Test For Example {src} Begin:", flush=True)
             commands, workflow = configure(config_file, src, dst, version)
             job = Autotest(dst, workflow)
-            job.compare(commands, save_files)
+            job.compare(commands, save_files, external_command)
             print(f"Test For Example {src} Finished\n", flush=True)
         else:
             raise FileNotFoundError(f"Can't find `config.json` in {src}")
 
     @classmethod
-    def batch_run(cls, src="", dst="", version=[], save_files=True):
+    def batch_run(cls, src="", dst="", version=[], save_files=True, external_command=''):
         """If there is a library of examples for test, this function can run all the test in a serial way. Each example directory
         should have a configuration file named `config.json`.
         
@@ -43,12 +44,13 @@ class Run:
         :params dst: path of working directory
         :params version: executable file list
         :params save_files: if save input files of last calculation, or not
+        :params external_command: other non-ABACUS code needed
         """
 
         for subsrc in os.listdir(src):
             abs_subsrc= os.path.join(src, subsrc)
             subdst = os.path.join(dst, os.path.basename(subsrc))
-            cls.single_run(abs_subsrc, subdst, version, save_files)
+            cls.single_run(abs_subsrc, subdst, version, save_files, external_command)
 
     @classmethod
     def batch_with_script(cls, filename, parallel=False):
@@ -88,7 +90,8 @@ class Run:
         if args.batch and args.local:
             text = read_json(args.batch)
             save_files = text.pop("save_files", True)
-            cls.batch_run(text["src"], text["dst"], text["version"], save_files)
+            external_command = text.pop("external_command", '')
+            cls.batch_run(text["src"], text["dst"], text["version"], save_files, external_command)
 
         elif args.batch and not args.local:
             cls.batch_with_script(args.batch, args.parallel)
@@ -96,7 +99,8 @@ class Run:
         elif args.single and args.local:
             text = read_json(args.single)
             save_files = text.pop("save_files", True)
-            cls.single_run(text["src"], text["dst"], text["version"], save_files)
+            external_command = text.pop("external_command", '')
+            cls.single_run(text["src"], text["dst"], text["version"], save_files, external_command)
     
         elif args.single and not args.local:
             cls.single_with_script(args.single)

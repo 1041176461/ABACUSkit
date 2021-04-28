@@ -1,15 +1,15 @@
 '''
 Date: 2021-03-24 16:05:38
 LastEditors: jiyuyang
-LastEditTime: 2021-04-23 18:06:40
+LastEditTime: 2021-04-28 20:41:39
 Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 '''
 
 from pyautotest.calculations.structure import Stru, read_stru, read_orb, read_kpt, cal_dis, cut_dis, round_dis, delete_zero
 from pyautotest.calculations.baseclass import ABACUSCalculation
 from pyautotest.calculations.plugins.scf import SCF
+from pyautotest.schedulers.data import Code
 from pyautotest.utils.tools import read_json, folder_name, list_elem2str
-from pyautotest.utils.script import configure_code
 
 import re
 import os
@@ -57,6 +57,11 @@ class SetDimers(ABACUSCalculation):
 
         super()._prepare(dst, **kwargs)
 
+        # Pseudopotential
+        if not self.pps:
+            obj = read_stru(self.input_dict["ntype"], Path(self.src, self.stru_file))
+            self.pps = obj.pps
+
         # KPT
         if "gamma_only" not in self.input_dict.keys() or self.input_dict["gamma_only"] == 0:
             if "kpoint_file" in self.input_dict.keys():
@@ -103,12 +108,10 @@ class SetDimers(ABACUSCalculation):
             shutil.copyfile(filename, Path(folder, self.orbitals[elem]))
 
         # Pseudopotential
-        if len(self.pps) != 0:
+        if not self.input_dict["pseudo_dir"]:
             for elem in elements:
                 filename = Path(self.src, self.pps[elem])
                 shutil.copyfile(filename, Path(folder, self.pps[elem]))
-        elif not self.input_dict["pseudo_dir"]:
-            raise FileNotFoundError(f"Can not find pseudopotential files in {self.src}.")
 
         input_copy = deepcopy(self.input_dict)
         input_copy["ntype"] = 1 if T1==T2 else 2
@@ -148,6 +151,9 @@ class SetDimers(ABACUSCalculation):
             orbitals = {T1 : self.orbitals[T1], T2 : self.orbitals[T2]}
             masses = {T1 : 1, T2 : 1}
             magmoms = {T1 : 0, T2 : 0}
+            numbers = {T1 : 1, T2 : 1}
+            positions = {T1 : [[0.0, 0.0, 0.0]], T2 : [[i_dis, 0.0, 0.0]]}
+            move = {T1 : [[0, 0, 0]], T2 : [[0, 0, 0]]}
         obj = Stru(elements=elements, positions=positions, lat0=lat0, cell=cell, pps=pps, orbitals=orbitals, numbers=numbers, masses=masses, magmoms=magmoms, move=move)
         obj.write_stru(folder/"STRU")
 
@@ -205,7 +211,7 @@ class SetDimers(ABACUSCalculation):
 
         :params dst: path of working directory
         :params command: string to execute a scf calculation
-        :params count: how many times does it take for all dimers to be calculated
+        :params count: how many times does it take for all dimers to be calculated, each time `(number of dimers)/count` be calculated
         """
 
         def set_commands(one_list):
@@ -250,18 +256,25 @@ class SetDimers(ABACUSCalculation):
 class OptABFs(ABACUSCalculation):
     """Optimize off-site Auxiliary Basis Functions(ABFs)"""
 
-    def __init__(self, input_dict, src, Nu, mainpy="", dr=0.01, lr=0.01, **kwargs):
+    def __init__(self, input_dict, src, Nu, dr=0.01, lr=0.01, **kwargs):
         """Set input parameters of  off-site ABFs optimization
         
         :params input_dict: dict of input parameters
         :params src: path of example which will be tested
         :params Nu: size of ABFs, e.g. `[4,3,2,1]` means 4s3p2d1f
-        :params mainpy: mainpy to optimize ABFs
         """
 
         super().__init__(input_dict, src, **kwargs)
         self.Nu = Nu
-        self.mainpy = mainpy
+        self.dr = dr
+        self.lr = lr
+
+    def _prepare(self, dst, **kwargs):
+        """Prepare input files for optimizing ABFs e.g. input.json
+        
+        :params dst: path of working directory
+        """
+
         self.stru_obj = read_stru(self.input_dict["ntype"], Path(self.src, self.stru_file))
         
         self.orb_obj_list = []
@@ -272,14 +285,6 @@ class OptABFs(ABACUSCalculation):
                 self.orb_obj_list.append(orb_obj) 
         else: 
             raise FileNotFoundError("Can not find orbital files.")
-        self.dr = dr
-        self.lr = lr
-
-    def _prepare(self, dst, **kwargs):
-        """Prepare input files for optimizing ABFs e.g. input.json
-        
-        :params dst: path of working directory
-        """
 
         self.folder_opt = Path(dst, "opt_orb_"+"-".join(list_elem2str(self.Nu)))
         self.folder_opt_matrix = self.folder_opt/"matrix"
@@ -344,7 +349,7 @@ class OptABFs(ABACUSCalculation):
         current_path = Path.cwd()
         os.chdir(self.folder_opt)
         os.environ["MKL_THREADING_LAYER"] = "GNU"
-        os.system(self.mainpy)
+        os.system(command)
         os.chdir(current_path)
 
     def _check(self, dst, **kwargs):
@@ -396,11 +401,11 @@ class OptABFs(ABACUSCalculation):
         res = {"ABFs":1}
         return res
 
-#TODO: Now EXX only support scf calculations, so we inherit class SCF 
+#TODO: Now EXX only support scf calculations, so we inherit class SCF, maybe inherit RELAX or CELL_RELAX later on 
 class EXX(SCF):
     """Hybrid function calculation with off-site ABFs basis"""
 
-    def __init__(self, input_dict, src, Nu, dimer_num, mainpy="", dr=0.01, lr=0.01, **kwargs) -> None:
+    def __init__(self, input_dict, src, Nu, dimer_num, dr=0.01, lr=0.01, **kwargs) -> None:
         """Set input parameters of hybrid function calculation
 
         :params input_dict: dict of input parameters
@@ -414,12 +419,9 @@ class EXX(SCF):
             raise KeyError("ABFs based on lcao basis, so `basis_type` in 'INPUT' must be 'lcao' or 'lcao_in_pw'.")
         self.Nu = Nu
         self.dimer_num = dimer_num
-        self.mainpy = mainpy
         self.dr = dr
         self.lr = lr
         self.kwargs = kwargs
-        self.obj_setdimers = SetDimers(input_dict, src, Nu, dimer_num, **kwargs)
-        self.obj_optabfs = OptABFs(input_dict, src, Nu, mainpy, dr, lr, **kwargs)
 
     def _prepare(self, dst, **kwargs):
         """Prepare input files for hybrid  e.g. input.json
@@ -427,20 +429,35 @@ class EXX(SCF):
         :params dst: path of working directory
         """
 
-        super()._prepare(dst, **kwargs)
-        self.obj_setdimers = SetDimers(self.input_dict, dst, self.Nu, self.dimer_num, **self.kwargs)
-        self.obj_optabfs = OptABFs(self.input_dict, self.src, self.Nu, self.mainpy, self.dr, self.lr, **self.kwargs)
+        self.obj_setdimers = SetDimers(self.input_dict, self.src, self.Nu, self.dimer_num, **self.kwargs)
+        self.obj_optabfs = OptABFs(self.input_dict, dst, self.Nu, self.dr, self.lr, **self.kwargs)
 
     def _execute(self, dst, command, **kwargs):
         """Execute calculation
 
         :params dst: path of working directory
-        :params command: string to execute a scf calculation
+        :params command: pyautotest.schedulers.data.Code` object to execute calculation
         """
+        
+        if isinstance(command, Code):
+            line = command.run_line()
+        else:
+            raise TypeError("Type of `command` here must be `pyautotest.schedulers.data.Code` object")
 
         current_path = Path.cwd()
-        self.obj_setdimers.calculate(dst, command, **kwargs) #TODO: how to force dimers calculation with one process
-        self.obj_optabfs.calculate(dst, command, **kwargs)
+        # set dimer
+        dimer_line = Code(code_name=command.code_name, 
+                        cmdline_params=['-np 1'], 
+                        stdout_name=command.stdout_name,
+                        stderr_name=command.stderr_name,
+                        withmpi=command.withmpi).run_line()
+        self.obj_setdimers.calculate(dst, dimer_line, **kwargs)
+
+        # optimize ABFs
+        external_command = kwargs.pop("external_command")
+        self.obj_optabfs.calculate(dst, external_command, **kwargs)
+        
+        # Exx calculation
         os.chdir(Path(dst, "exx_"+"-".join(list_elem2str(self.Nu))))
-        os.system(command)
+        os.system(line)
         os.chdir(current_path)

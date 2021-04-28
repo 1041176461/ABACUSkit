@@ -1,0 +1,42 @@
+{
+    "workflow"  :   {
+        "cal_0" : {
+            "name"  :   "exx.EXX",
+            "code"             : {
+                "cmdline_params"        :   ["-n 1", "-env OMP_NUM_THREADS=28"],
+                "withmpi"               :   "mpirun",
+                "stdin_name"            :   null,
+                "join_files"            :   false
+            },
+            "input_params"     :    {
+                "ntype"         :   2, 
+                "ecutwfc"       :   100, 
+                "dr2"           :   1e-8,
+		"niter"		:   400, 
+                "basis_type"    :   "lcao", 
+                "ks_solver"     :   "genelpa", 
+                "smearing"      :   "gaussian",
+                "sigma"         :   0.02,
+                "mixing_type"   :   "pulay", 
+                "mixing_beta"   :   0.4,
+		"pseudo_dir"	:   "/home/jiyy/SG15_upf",
+		"exx_hybrid_type":         "hse",
+		"exx_opt_orb_ecut":        100,
+		"exx_opt_orb_tolerence":   1e-12,
+		"exx_ccp_rmesh_times":     1.5,
+		"exx_dm_threshold":        5e-4,
+		"exx_cauchy_threshold":    1e-8,
+		"exx_schwarz_threshold":   5e-5,
+		"exx_c_threshold":         5e-5,
+		"exx_v_threshold":         0,
+		"exx_pca_threshold":       1e-4
+            },
+            "stru_file"         :   "STRU",
+            "orbitals"          :   {"Mg":"Mg_pbe_9.0au_100Ry_4s2p1d_dpsi", "O":"O_pbe_7.0au_100Ry_2s2p1d_dpsi"},
+            "kpt_file"          :   "KPT",
+	    "Nu"		:   [4,3,2,1],
+	    "dimer_num"		:   5,
+	    "count"		:   1
+        }
+    }
+}

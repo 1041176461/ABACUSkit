@@ -1,14 +1,17 @@
 '''
 Date: 2021-03-18 20:12:03
 LastEditors: jiyuyang
-LastEditTime: 2021-03-18 20:20:50
+LastEditTime: 2021-04-28 19:00:25
 Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 '''
 
 from enum import IntEnum
 
-class CodeDefaultFields:
+from numpy import savez_compressed
+
+class Code:
     def __init__(self,
+                code_name='',
                 cmdline_params=[],
                 stdin_name=None,
                 stdout_name=None,
@@ -17,14 +20,36 @@ class CodeDefaultFields:
                 withmpi='mpirun',
                 code_uuid=None
     ):
+        """
+        params: code_name: string of code_name
+        params: cmdline_params: a list of strings with the command line arguments of the program to run. For example: mpirun cmdline_params[0] cmdline_params[1] ... < stdin > stdout. 
+        params: stdin_name: (optional) the name of the standard input file.  code.x < stdin_name
+        params: stdout_name: (optional) the name of the standard output file. code.x ... > stdout_name
+        params: stderr_name: (optional) a string, the name of the error file of the code.
+        params: join_files: If join_files=True, code.x ... > stdout_name 2>&1, if join_files=False, code.x ... > stdout_name 2> stderr_name
+        params: withmpi: if not None, executes the code with `withmpi` value (mpirun or another MPI installed on the remote computer)
+        params: code_uuid: the uuid of the code
+        """
+
+        self.code_name = code_name
+        self.cmdline_params = cmdline_params     
+        self.stdin_name = stdin_name            
+        self.stdout_name = stdout_name         
+        self.stderr_name = stderr_name          
+        self.join_files = join_files             
+        self.withmpi = withmpi                   
+        self.code_uuid = code_uuid               
+
+    def run_line(self):
+        """Return run lines """
+
+        command_to_exec = f'{self.withmpi} '+' '.join(self.cmdline_params)+f' {self.code_name}' if self.withmpi else ' '.join(self.cmdline_params)
+        stdin_str = f'< {self.stdin_name}' if self.stdin_name else ''
+        stdout_str = f'> {self.stdout_name}' if self.stdout_name else ''
+        stderr_str = '2>&1' if self.join_files else f'2> {self.stderr_name}' if self.stderr_name else ''
+        output_string = f'{command_to_exec} {stdin_str} {stdout_str} {stderr_str}'
         
-        self.cmdline_params = cmdline_params     # a list of strings with the command line arguments of the program to run. For example: mpirun cmdline_params[0] cmdline_params[1] ... < stdin > stdout. 
-        self.stdin_name = stdin_name             # (optional) the name of the standard input file.  code.x < stdin_name
-        self.stdout_name = stdout_name           # (optional) the name of the standard output file. code.x ... > stdout_name
-        self.stderr_name = stderr_name           # (optional) a string, the name of the error file of the code.
-        self.join_files = join_files             # If join_files=True, code.x ... > stdout_name 2>&1, if join_files=False, code.x ... > stdout_name 2> stderr_name
-        self.withmpi = withmpi                   # if not None, executes the code with `withmpi` value(mpirun or another MPI installed on the remote computer)
-        self.code_uuid = code_uuid               # the uuid of the code
+        return output_string
 
 class CodeRunMode(IntEnum):
     """Enum to indicate the way the codes of a calculation should be run.

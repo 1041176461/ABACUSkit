@@ -1,0 +1,56 @@
+{
+    "workflow"  :   {
+        "cal_0" : {
+            "name"  :   "scf.SCF",
+            "code"             : {
+                "cmdline_params"        :   ["-np 4"],
+                "withmpi"               :   "mpirun",
+                "stdin_name"            :   null,
+                "join_files"            :   false
+            },
+            "input_params"     :    {
+                "ntype"         :   1, 
+                "nbands"        :   8, 
+                "symmetry"      :   1, 
+                "ecutwfc"       :   50, 
+                "dr2"           :   1e-6, 
+                "basis_type"    :   "lcao", 
+                "ks_solver"     :   "genelpa", 
+                "smearing"      :   "gaussian", 
+                "sigma"         :   0.02,
+                "mixing_type"   :   "pulay", 
+                "mixing_beta"   :   0.4, 
+                "out_charge"    :   1
+            },
+            "stru_file"         :   "STRU",
+            "orb_file"          :   ["Si_gga_8au_60Ry_2s2p1d.orb"],
+            "pseudo_file"       :   ["Si_ONCV_PBE-1.0.upf"],
+            "kpt_file"          :   "KPT-scf"
+        },
+        "cal_1" : {
+            "name"  :   "nscf.BAND",
+            "code"             : {
+                "cmdline_params"        :   ["-np 1"],
+                "withmpi"               :   "mpirun",
+                "stdin_name"            :   null,
+                "join_files"            :   false
+            },
+            "input_params"     :    {
+                "ntype"         :   1, 
+                "nbands"        :   8, 
+                "ecutwfc"       :   50, 
+                "dr2"           :   1e-6, 
+                "basis_type"    :   "lcao", 
+                "ks_solver"     :   "genelpa", 
+                "smearing"      :   "gaussian", 
+                "sigma"         :   0.02,
+                "mixing_type"   :   "pulay", 
+                "mixing_beta"   :   0.4
+            },   
+            "density_file"      : [],
+            "orb_file"          :    ["Si_gga_8au_60Ry_2s2p1d.orb"],
+            "pseudo_file"       :    ["Si_ONCV_PBE-1.0.upf"],
+            "kpt_file"          :   "KPT-band" 
+        }
+    }
+}

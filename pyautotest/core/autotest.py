@@ -1,11 +1,11 @@
 '''
 Date: 2021-04-02 19:45:22
 LastEditors: jiyuyang
-LastEditTime: 2021-04-23 16:15:59
+LastEditTime: 2021-04-28 18:03:09
 Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 '''
 
-from pyautotest.utils.script import configure_code, run_line
+from pyautotest.schedulers.data import Code
 
 import re
 import json
@@ -43,20 +43,16 @@ def configure(config_file, src="", dst="", version=[]):
             stdin_name = code.pop("stdin_name", None)
             join_files=code.pop("join_files", False)
             withmpi=code.pop("withmpi", "mpirun")
-            codes_info = []
-            for ver in version:
-                cmdline = []
-                cmdline += cmdline_params
-                cmdline += [ver]
-                codes_info += configure_code(cmdline_params=cmdline, 
-                                            stdin_name=stdin_name, 
-                                            stdout_name=f"{cal}.log", 
-                                            stderr_name=f"{cal}.err",
-                                            join_files=join_files,
-                                            withmpi=withmpi
-                                            )
             commands = []
-            commands += run_line(codes_info)
+            for ver in version:
+                commands.append(Code(code_name=ver,
+                                    cmdline_params=cmdline_params, 
+                                    stdin_name=stdin_name, 
+                                    stdout_name=f"{cal}.log", 
+                                    stderr_name=f"{cal}.err",
+                                    join_files=join_files,
+                                    withmpi=withmpi
+                                    ))
             allcommands.append(commands)
             input_dict = cal_elem.pop("input_params")
             if independent:
@@ -85,27 +81,28 @@ class Autotest:
         self.dst = dst
         self.workflow = workflow
 
-    def calculate(self, command="", save_files=False):
+    def calculate(self, command, save_files=False, external_command=''):
         """The whole process of auto-test
         
-        :params command: string of command line. Default: ""
+        :params command: string of command line or `pyautotest.schedulers.data.Code` object. Default: ""
         :params save_files: save input files of last calculation or not. Default: False
         """
 
         subdst = Path(self.dst)
         subdst.mkdir(parents=True, exist_ok=False)
         for index, cal in enumerate(self.workflow):
-            res = cal.calculate(dst=subdst, command=command, index=index)
+            res = cal.calculate(dst=subdst, command=command, index=index, external_command=external_command)
             if save_files:
                 cal.save(dst=subdst, save_dir=Path(subdst, f"cal_{str(index)}"))
                 
         return res
 
-    def compare(self, commands=[], save_files=False):
+    def compare(self, commands=[], save_files=False, external_command=''):
         """Comparison test between different commands
         
-        :params commands: list of commands
+        :params commands: list of commands string or `pyautotest.schedulers.data.Code` object
         :params save_files: save input files of last calculation or not. Default: False
+        :params external_command: other non-ABACUS code needed
         """
 
         res = OrderedDict()
@@ -113,7 +110,7 @@ class Autotest:
             for j, command in enumerate(commands[index]):
                 subdst = Path(self.dst, f"command_{j}")
                 subdst.mkdir(parents=True, exist_ok=True)
-                res[f"command_{j}"] = cal.calculate(dst=subdst, command=command, index=index)
+                res[f"command_{j}"] = cal.calculate(dst=subdst, command=command, index=index, external_command=external_command)
                 if save_files:
                     cal.save(dst=subdst, save_dir=Path(subdst, f"cal_{str(index)}"))
             self._check(res)
