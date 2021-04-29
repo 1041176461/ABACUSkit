@@ -23,10 +23,11 @@ def Direct2Cartesian(positions, cell):
     :params cell: list of lattice vectors. If `format` is "Direct", it should be set. lattice vectors in ABACUS are scaled by the lattice constant. Default: []
     """
 
-    for pos in positions:
-        positions[pos] = np.dot(positions[pos], cell)
+    new_positions = deepcopy(positions)
+    for pos in new_positions:
+        new_positions[pos] = np.dot(new_positions[pos], cell)
 
-    return positions
+    return new_positions
 
 def Cartesian_angstrom2Cartesian(positions):
     """Transform Cartesian_angstrom coordinates to Cartesian format in unit lat0
@@ -34,10 +35,11 @@ def Cartesian_angstrom2Cartesian(positions):
     :params postions: atomic Cartesian_angstrom coordinates in unit lat0
     """
 
-    for pos in positions:
-        positions[pos] = np.array(positions[pos])/0.529166
+    new_positions = deepcopy(positions)
+    for pos in new_positions:
+        new_positions[pos] = np.array(new_positions[pos])/0.529166
 
-    return positions
+    return new_positions
 
 def read_stru(ntype, stru_file=""):
     """
