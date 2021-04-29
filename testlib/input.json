@@ -1,6 +1,6 @@
 {
-    "src"               :   "/home/jiyy/ABACUS/AutoTest/new/testlib/Ga-dpsi",
-    "dst"               :   "/home/jiyy/ABACUS/AutoTest/new/orb",
+    "src"               :   "/home/jiyy/ABACUS/AutoTest/new/testlib",
+    "dst"               :   "/home/jiyy/ABACUS/AutoTest/new/test",
     "version"           :   ["/home/jiyy/ABACUS/ABACUS_git_exx/git210119/bin/ABACUS.mpi.1.0.0_exx_fixdm3bug_avx2"],
     "external_command"	:   "python -u /home/jiyy/ABACUS/ABACUS_git_exx/tools/opt_orb_pytorch/main.py > job.log 2>job.err",
     "save_files"        :   true,
@@ -15,5 +15,5 @@
         "queue_name"                :   "gold5120",
         "max_wallclock_seconds"     :   720000,
         "import_sys_environment"    :   true
-     }
+    }
 }
