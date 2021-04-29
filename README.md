@@ -72,7 +72,7 @@ python setup.py install
 ## `config.json`参数说明
 - **workflow**：必要参数
   - **cal_\***, `*`为从0开始的整数，必须依次设置，不能跳跃设置，即只设置`cal_0`和`cal_2`，不设置`cal_1`
-    - **name**：用于指定计算名称
+    - **name**：用于指定计算名称：文件名.类名。例如：`scf.SCF`，`opt_orb.LCAO`等
     - **code**：用于配置命令行
       - **cmdline_params**：一系列命令行参数字符串组成的列表 
       - **withmpi**：MPI命令（如`mpirun`，`mpiexec`），若不需要MPI则设为`null`
