@@ -36,6 +36,7 @@ python setup.py install
 - **src**：测试目录路径
 - **dst**：工作目录路径
 - **version**：ABACUS版本列表
+- **external_command**：轨道生成、EXX计算需要用外部Python脚本，该参数指定相应命令行
 - **job_resource**：作业所需资源。下面前三个参数主要用于PBSpro、SLURM和Torque，后两个主要用于SGE和LSF
   - **num_machines**：需要多少机器（节点）
   - **num_mpiprocs_per_machine**：每个机器（节点）上需要运行多少MPI进程
