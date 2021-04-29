@@ -193,7 +193,7 @@ class SetDimers(ABACUSCalculation):
 class OptLCAO(ABACUSCalculation):
     """Optimize atomic orbitals(LCAO)"""
 
-    def __init__(self, input_dict, src, element, Nu, rcut, ref_band, target=1, dr=0.01, lr=0.01, **kwargs):
+    def __init__(self, input_dict, src, element, Nu, rcut, ref_band, target=1, cal_T=False, cal_smooth=False, dr=0.01, lr=0.01, **kwargs):
         """Set input parameters of LCAOs optimization
         
         :params input_dict: dict of input parameters
@@ -203,6 +203,8 @@ class OptLCAO(ABACUSCalculation):
         :params rcut: cutoff of wavefunctions(a.u.)
         :params ref_band: number of  reference bands
         :params target: fitting target, 0 - wave function, 1 - wave function and its gradient
+        :params cal_T: if fit kinetic energy
+        :params cal_smooth: if use smooth method
         """
 
         super().__init__(input_dict, src, **kwargs)
@@ -216,6 +218,8 @@ class OptLCAO(ABACUSCalculation):
         self.ref_band = ref_band
         self.target = target
         self.dimer_num = len(distance[self.element])
+        self.cal_T = "true" if cal_T else "false"
+        self.cal_smooth = "true" if cal_smooth else "false"
 
     def _prepare(self, dst, **kwargs):
         """Prepare input files for optimizing ABFs e.g. input.json
@@ -237,14 +241,16 @@ class OptLCAO(ABACUSCalculation):
             "file_list": read_json(Path(self.src, "folders")),
             "info":
             {
-                "Nt_all":   [self.element],
-                "Nu":       {self.element:self.Nu},
-                "Nb_true":	[self.ref_band]*self.dimer_num,
-                "weight":	[1]*self.dimer_num,
-                "Rcut":		{self.element:self.rcut},
-                "dr":		{self.element:self.dr},
-                "Ecut":		{self.element:self.input_dict["ecutwfc"]},
-                "lr":		self.lr
+                "Nt_all":       [self.element],
+                "Nu":           {self.element:self.Nu},
+                "Nb_true":	    [self.ref_band]*self.dimer_num,
+                "weight":	    [1]*self.dimer_num,
+                "Rcut":		    {self.element:self.rcut},
+                "dr":		    {self.element:self.dr},
+                "Ecut":		    {self.element:self.input_dict["ecutwfc"]},
+                "lr":		    self.lr,
+                "cal_T":        self.cal_T,
+                "cal_smooth":   self.cal_smooth
             },
             "C_init_info":
             { 
@@ -302,7 +308,7 @@ class OptLCAO(ABACUSCalculation):
 class LCAO(ABACUSCalculation):
     """Linear Combination of Atomic Orbitals"""
 
-    def __init__(self, input_dict, src, element, Nu, rcut, ref_band, target=1, dr=0.01, lr=0.01, **kwargs) -> None:
+    def __init__(self, input_dict, src, element, Nu, rcut, ref_band, target=1, cal_T=False, cal_smooth=False, dr=0.01, lr=0.01, **kwargs) -> None:
         """Set input parameters of dimers calculation
 
         :params input_dict: dict of input parameters
@@ -312,6 +318,8 @@ class LCAO(ABACUSCalculation):
         :params rcut: cutoff of wavefunctions(a.u.)
         :params ref_band: number of  reference bands
         :params target: fitting target, 0 - wave function, 1 - wave function and its gradient
+        :params cal_T: if fit kinetic energy
+        :params cal_smooth: if use smooth method
         """
 
         super().__init__(input_dict, src, **kwargs)
@@ -320,6 +328,8 @@ class LCAO(ABACUSCalculation):
         self.rcut = rcut
         self.ref_band = ref_band
         self.target = target
+        self.cal_T = cal_T
+        self.cal_smooth = cal_smooth
         self.dr = dr
         self.lr = lr
         self.kwargs = kwargs
@@ -331,7 +341,7 @@ class LCAO(ABACUSCalculation):
         """
 
         self.obj_setdimers = SetDimers(self.input_dict, self.src, self.element, self.Nu, self.rcut, self.ref_band, self.target, **self.kwargs)
-        self.obj_optlcao = OptLCAO(self.input_dict, dst, self.element, self.Nu, self.rcut, self.ref_band, self.target, self.dr, self.lr, **self.kwargs)
+        self.obj_optlcao = OptLCAO(self.input_dict, dst, self.element, self.Nu, self.rcut, self.ref_band, self.target, self.cal_T, self.cal_smooth, self.dr, self.lr, **self.kwargs)
 
     def _execute(self, dst, command, **kwargs):
         """Execute calculation
