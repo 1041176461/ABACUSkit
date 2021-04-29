@@ -1,0 +1,26 @@
+{
+    "workflow"  :   {
+        "cal_0" : {
+            "name"  :   "opt_orb.LCAO",
+            "code"             : {
+                "cmdline_params"        :   ["-n 4", "-env OMP_NUM_THREADS=1"],
+                "withmpi"               :   "mpirun",
+                "stdin_name"            :   null,
+                "join_files"            :   false
+            },
+            "input_params"     	:    {
+		"ntype"		:	1,
+                "ecutwfc"       :   	100,
+		"nbands"	:	15,
+		"sigma"		:       0.01
+            },
+	    "element"		:   "Ga",
+	    "Nu"		:   [2,2,2],
+	    "rcut"		:   9,
+	    "ref_band"		:   13,
+	    "target"		:   1,
+	    "count"		:   1,
+	    "pps"		:   {"Ga":"Ga_ONCV_PBE-1.0.upf"}
+        }
+    }
+}

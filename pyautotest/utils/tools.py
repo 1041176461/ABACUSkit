@@ -1,7 +1,7 @@
 '''
 Date: 2021-03-29 21:35:30
 LastEditors: jiyuyang
-LastEditTime: 2021-04-23 16:51:39
+LastEditTime: 2021-04-29 13:38:49
 Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 '''
 
@@ -109,13 +109,14 @@ def search_sentence(file, sentence):
         for line in file:
             if skip_notes(line).strip() == sentence:
                 return True
-        return False
     elif isinstance(sentence, list):
         sentence = list_elem2strip(sentence)
         for line in file:
             if skip_notes(line).strip() in sentence:
                 return True
-        return False
+
+    file.seek(0, 0)
+    return False
 
 def list_elem2str(a=[]):
     """Convert type of list element to str

@@ -1,7 +1,7 @@
 '''
 Date: 2021-03-24 16:05:38
 LastEditors: jiyuyang
-LastEditTime: 2021-04-28 20:41:39
+LastEditTime: 2021-04-29 15:24:09
 Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 '''
 
@@ -130,9 +130,6 @@ class SetDimers(ABACUSCalculation):
         #STRU
         lat0=1
         cell=[[30, 0, 0], [0, 30, 0], [0, 0, 30]]
-        numbers = {}
-        positions = {}
-        move = {}
         if T1 == T2:
             pps = {T1 : self.pps[T1]}
             orbitals = {T1 : self.orbitals[T1]}
@@ -257,7 +254,7 @@ class OptABFs(ABACUSCalculation):
     """Optimize off-site Auxiliary Basis Functions(ABFs)"""
 
     def __init__(self, input_dict, src, Nu, dr=0.01, lr=0.01, **kwargs):
-        """Set input parameters of  off-site ABFs optimization
+        """Set input parameters of off-site ABFs optimization
         
         :params input_dict: dict of input parameters
         :params src: path of example which will be tested
@@ -290,13 +287,11 @@ class OptABFs(ABACUSCalculation):
         self.folder_opt_matrix = self.folder_opt/"matrix"
         self.folder_opt_matrix.mkdir(parents=True, exist_ok=False)
 
-        if Path(self.src, "folders").exists():
-            Dir = self.src
-        else:
+        if not Path(self.src, "folders").exists():
             raise FileNotFoundError("'folders' which is a out file of `SetDimers` calculations not found.")
 
-        self.folders_weight = read_json(Path(Dir, "folders"))
-        self.set_matrix(Dir)
+        self.folders_weight = read_json(Path(self.src, "folders"))
+        self.set_matrix(self.src)
         with open(self.folder_opt/"input.json", 'w') as file:
             json.dump(self.set_input(), file, indent=4)
 
@@ -331,7 +326,10 @@ class OptABFs(ABACUSCalculation):
                 "Ecut":		{elem:self.input_dict["exx_opt_orb_ecut"] for elem in self.stru_obj.elements},
                 "lr":		self.lr
             },
-            "C_init_info":{ "init_from_file": False },
+            "C_init_info":
+            { 
+                "init_from_file":   False 
+            },
             "V_info":
             {
                 "init_from_file":	True,
@@ -376,9 +374,10 @@ class OptABFs(ABACUSCalculation):
         for elem in self.stru_obj.elements:
             filename = f"{self.folder_opt}/orb_{elem}.dat"
             datafile = f"{subdst}/abfs_{elem}.dat"
+            self.stru_obj.abfs[elem] = datafile
             shutil.copyfile(filename, datafile)
 
-        #STRU
+        # STRU
         self.stru_obj.write_stru(f"{subdst}/STRU")
         for obj in self.orb_obj_list:
             shutil.copy2(obj.datafile, subdst)
@@ -459,5 +458,6 @@ class EXX(SCF):
         
         # Exx calculation
         os.chdir(Path(dst, "exx_"+"-".join(list_elem2str(self.Nu))))
+        shutil.copyfile(Path(dst, "INPUT"), "./INPUT")
         os.system(line)
         os.chdir(current_path)
