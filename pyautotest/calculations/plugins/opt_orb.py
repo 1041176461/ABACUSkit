@@ -179,9 +179,9 @@ class SetDimers(ABACUSCalculation):
         """
 
         filename = Path(dst, "folders")
-        origin = [str(folder/"test.0.dat") for folder in self.folder_list]
+        origin = [os.path.join(folder, "test.0.dat") for folder in self.folder_list]
         if self.target == 1:
-            linear = [[str(folder/"test.1.dat") for folder in self.folder_list]]
+            linear = [[os.path.join(folder, "test.1.dat") for folder in self.folder_list]]
         data = {"origin" : origin, "linear" : linear}
         with open(filename, 'w') as file:  
             json.dump(data, file, indent=4)
