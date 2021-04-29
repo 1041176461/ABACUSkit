@@ -1,7 +1,7 @@
 '''
 Date: 2021-04-28 21:11:37
 LastEditors: jiyuyang
-LastEditTime: 2021-04-29 16:30:01
+LastEditTime: 2021-04-29 23:32:04
 Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 '''
 
@@ -243,7 +243,7 @@ class OptLCAO(ABACUSCalculation):
                 "weight":	[1]*self.dimer_num,
                 "Rcut":		{self.element:self.rcut},
                 "dr":		{self.element:self.dr},
-                "Ecut":		{self.element:self.input_dict["ecutwfx"]},
+                "Ecut":		{self.element:self.input_dict["ecutwfc"]},
                 "lr":		self.lr
             },
             "C_init_info":
