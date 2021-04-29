@@ -68,7 +68,7 @@ python setup.py install
   - **prepend_text**：字符串将插入到可执行命令之前
   - **append_text**：字符串将插入到可执行命令之后
   - **import_sys_environment**：若为`true`，导入系统环境变量
-  - 
+
 ## `config.json`参数说明
 - **workflow**：必要参数
   - **cal_\***, `*`为从0开始的整数，必须依次设置，不能跳跃设置，即只设置`cal_0`和`cal_2`，不设置`cal_1`
