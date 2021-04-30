@@ -298,7 +298,7 @@ class OptLCAO(ABACUSCalculation):
             datafile = f"{self.folder_opt}/psi_{self.element}.dat"
             name = "PSI"
         elif self.target == 1:
-            datafile = f"{self.folder_opt}/psi_{self.element}.dat"
+            datafile = f"{self.folder_opt}/dpsi_{self.element}.dat"
             name = "DPSI"
         os.rename(filename, datafile)
 
