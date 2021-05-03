@@ -23,8 +23,8 @@
                 "out_charge"    :   1
             },
             "stru_file"         :   "STRU",
-            "orb_file"          :   ["Si_gga_8au_60Ry_2s2p1d.orb"],
-            "pseudo_file"       :   ["Si_ONCV_PBE-1.0.upf"],
+            "orbitals"          :   {"Si":"Si_gga_8au_60Ry_2s2p1d.orb"},
+            "pps"               :   {"Si":"Si_ONCV_PBE-1.0.upf"},
             "kpt_file"          :   "KPT-scf"
         },
         "cal_1" : {
@@ -48,8 +48,8 @@
                 "mixing_beta"   :   0.4
             },   
             "density_file"      : [],
-            "orb_file"          :    ["Si_gga_8au_60Ry_2s2p1d.orb"],
-            "pseudo_file"       :    ["Si_ONCV_PBE-1.0.upf"],
+            "orbitals"          :   {"Si":"Si_gga_8au_60Ry_2s2p1d.orb"},
+            "pps"               :   {"Si":"Si_ONCV_PBE-1.0.upf"},
             "kpt_file"          :   "KPT-band" 
         }
     }
