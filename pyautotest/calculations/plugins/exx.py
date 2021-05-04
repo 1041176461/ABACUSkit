@@ -69,7 +69,7 @@ class SetDimers(ABACUSCalculation):
             else:
                 kpt, offset = read_kpt(Path(self.src, self.kpt_file))
         elif self.input_dict["gamma_only"] == 1:
-            kpt, offset = [1.0, 1.0, 1.0], [0, 0, 0]
+            kpt, offset = [1, 1, 1], [0, 0, 0]
         else:
             raise FileNotFoundError("Can not find k-points file.")
 
@@ -108,7 +108,7 @@ class SetDimers(ABACUSCalculation):
             shutil.copyfile(filename, Path(folder, self.orbitals[elem]))
 
         # Pseudopotential
-        if not self.input_dict["pseudo_dir"]:
+        if "pseudo_dir" not in self.input_dict.keys():
             for elem in elements:
                 filename = Path(self.src, self.pps[elem])
                 shutil.copyfile(filename, Path(folder, self.pps[elem]))
@@ -416,11 +416,17 @@ class EXX(SCF):
         super().__init__(input_dict, src, **kwargs)
         if self.input_dict["basis_type"] not in ["lcao", "lcao_in_pw"]:
             raise KeyError("ABFs based on lcao basis, so `basis_type` in 'INPUT' must be 'lcao' or 'lcao_in_pw'.")
+        self.delete_key()
         self.Nu = Nu
         self.dimer_num = dimer_num
         self.dr = dr
         self.lr = lr
         self.kwargs = kwargs
+
+    def delete_key(self):
+        key_list = ["ocp", "ocp_set", "nelec"]
+        for i in key_list:
+            self.input_dict.pop(i, None)
 
     def _prepare(self, dst, **kwargs):
         """Prepare input files for hybrid  e.g. input.json
