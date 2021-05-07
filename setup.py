@@ -10,7 +10,7 @@ from setuptools import setup, find_packages
 if __name__ == "__main__":
     setup(
         name = 'pyautotest',
-        version = '0.2',
+        version = '0.3',
         packages = find_packages(),
         description = 'Auto-test for ABACUS',
         author = 'jiyuyang',

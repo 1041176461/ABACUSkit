@@ -1,7 +1,7 @@
 {
     "workflow"  :   {
         "cal_0" : {
-            "name"  :   "scf.SCF",
+            "name"  :   "scf.CELL_RELAX",
             "code"             : {
                 "cmdline_params"        :   ["-np 4"],
                 "withmpi"               :   "mpirun",
@@ -11,46 +11,49 @@
             "input_params"     :    {
                 "ntype"         :   1, 
                 "nbands"        :   8, 
-                "symmetry"      :   1, 
-                "ecutwfc"       :   50, 
+                "ecutwfc"       :   60, 
                 "dr2"           :   1e-6, 
+		"niter"		:   100,
                 "basis_type"    :   "lcao", 
                 "ks_solver"     :   "genelpa", 
                 "smearing"      :   "gaussian", 
                 "sigma"         :   0.02,
+		"nstep"		:   100,
                 "mixing_type"   :   "pulay", 
                 "mixing_beta"   :   0.4, 
-                "out_charge"    :   1
+                "vdw_method"    :   "d3_0",
+		"force_thr_ev"	:   0.005,
+		"stress_thr"	:   1,
+		"out_charge"	:   1
             },
             "stru_file"         :   "STRU",
-            "orbitals"          :   {"Si":"Si_gga_8au_60Ry_2s2p1d.orb"},
-            "pps"               :   {"Si":"Si_ONCV_PBE-1.0.upf"},
             "kpt_file"          :   "KPT-scf"
         },
-        "cal_1" : {
-            "name"  :   "nscf.BAND",
+	"cal_1" : {
+	    "name"  :   "nscf.BAND",
             "code"             : {
-                "cmdline_params"        :   ["-np 1"],
+                "cmdline_params"        :   ["-np 4"],
                 "withmpi"               :   "mpirun",
                 "stdin_name"            :   null,
                 "join_files"            :   false
             },
             "input_params"     :    {
-                "ntype"         :   1, 
-                "nbands"        :   8, 
-                "ecutwfc"       :   50, 
-                "dr2"           :   1e-6, 
-                "basis_type"    :   "lcao", 
-                "ks_solver"     :   "genelpa", 
-                "smearing"      :   "gaussian", 
+                "ntype"         :   1,
+                "nbands"        :   8,
+                "ecutwfc"       :   60,
+                "dr2"           :   1e-6,
+                "niter"         :   100,
+                "basis_type"    :   "lcao",
+                "ks_solver"     :   "genelpa",
+                "smearing"      :   "gaussian",
                 "sigma"         :   0.02,
-                "mixing_type"   :   "pulay", 
-                "mixing_beta"   :   0.4
-            },   
-            "density_file"      : [],
-            "orbitals"          :   {"Si":"Si_gga_8au_60Ry_2s2p1d.orb"},
-            "pps"               :   {"Si":"Si_ONCV_PBE-1.0.upf"},
-            "kpt_file"          :   "KPT-band" 
-        }
+                "nstep"         :   100,
+                "mixing_type"   :   "pulay",
+                "mixing_beta"   :   0.4,
+                "vdw_method"    :   "d3_0"
+            },
+            "stru_file"         :   "STRU",
+            "kpt_file"          :   "KPT-band"
+	} 
     }
 }

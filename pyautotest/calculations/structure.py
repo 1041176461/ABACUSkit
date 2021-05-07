@@ -6,8 +6,8 @@ Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 '''
 
 from pyautotest.utils.tools import skip_notes, search_sentence, list_elem2str
+from pyautotest.utils.typings import *
 
-import re
 import numpy as np
 import functools
 import operator
@@ -16,7 +16,9 @@ import decimal
 from copy import deepcopy
 from collections import defaultdict
 
-def Direct2Cartesian(positions, cell):
+
+# STRU
+def Direct2Cartesian(positions: Dict_str_list, cell: Dict_str_float) -> Dict_str_list:
     """Transform direct coordinates to Cartesian format in unit lat0
     
     :params postions: atomic direct coordinates in unit lat0
@@ -29,7 +31,7 @@ def Direct2Cartesian(positions, cell):
 
     return new_positions
 
-def Cartesian_angstrom2Cartesian(positions):
+def Cartesian_angstrom2Cartesian(positions: Dict_str_list) -> Dict_str_list:
     """Transform Cartesian_angstrom coordinates to Cartesian format in unit lat0
     
     :params postions: atomic Cartesian_angstrom coordinates in unit lat0
@@ -41,7 +43,152 @@ def Cartesian_angstrom2Cartesian(positions):
 
     return new_positions
 
-def read_stru(ntype, stru_file=""):
+class Stru:
+    """ABACUS `STRU` file information"""
+
+    def __init__(self, lat0: int, cell: list, pps: Dict_str_str, positions: Dict_str_list={}, scaled_positions: Dict_str_list={}, positions_angstrom_lat0: Dict_str_list={}, orbitals: Dict_str_str={}, masses: Dict_str_float={}, magmoms: Dict_str_float={}, move: Dict_str_int={}, abfs: Dict_str_str={}) -> None:
+        """Initialize Stru object
+
+        :params lat0: int, lattice constant in unit bohr. 
+        :params cell: list, lattice vector in unit `lat0`. 
+        :params pps: dict, dict of pseudopotential file. 
+        :params positions: dict, key is element name and value is list of atomic Cartesian coordinates in unit lat0. 
+        :params scaled_positions: dict, key is element name and value is list of atomic direct coordinates in unit lat0. This parameter had better not be set at the same time with `positions`. 
+                                Because Cartesian coordinates will be calculated automatically based on direct coordinates and lattice vector `cell`. So self.positions still exists. 
+        :params positions_angstrom_lat0: dict, key is element name and value is list of atomic Cartesian_angstrom coordinates in unit lat0. This parameter had better not be set at the same time with `positions`. 
+                                Because Cartesian coordinates will be calculated automatically based on Cartesian_angstrom coordinates. So self.positions still exists. 
+        :params orbitals: dict, dict of orbital file. 
+        :params masses: dict, dict of atomic mass. 
+        :params magmoms: dict, dict of magnetic moment. 
+        :params move: dict, key is element name and value is list of 1 or 0, `1` means atom can move. 
+        :params abfs: dict, dict of ABFs for hybrid functional calculation. 
+        """
+
+        self.lat0 = lat0
+        self.cell = cell
+        if positions and scaled_positions and positions_angstrom_lat0:
+            raise TypeError("'positions', 'scaled_positions' and `positions_angstrom_lat0` can not be set simultaneously")
+        elif positions:
+            self._ctype = "Cartesian"
+            self.scaled_positions = scaled_positions
+            self.positions = positions
+        elif scaled_positions:
+            self._ctype = "Direct"
+            self.scaled_positions = scaled_positions
+            self.positions = Direct2Cartesian(scaled_positions, self.cell)
+        elif positions_angstrom_lat0:
+            self._ctype = "Cartesian_angstrom"
+            self.positions_angstrom_lat0 = positions_angstrom_lat0
+            self.positions = Cartesian_angstrom2Cartesian(positions_angstrom_lat0)
+        else:
+            raise TypeError("One of 'positions' and 'scaled_positions' must be set")
+        self.elements = []
+        self.numbers = {}
+        for elem in self.positions:
+            self.elements.append(elem)
+            self.numbers[elem] = len(self.positions[elem])
+        self.pps = pps
+        self.orbitals = orbitals
+        if len(masses) == 0:
+            self.masses = {elem:1 for elem in self.elements}
+        else:
+            self.masses = masses
+        if len(magmoms) == 0:
+            self.magmoms = {elem:0 for elem in self.elements}
+        else:
+            self.magmoms = magmoms
+        if len(move) == 0:
+            for i, elem in enumerate(self.elements):
+                for j in range(self.numbers[i]):
+                    move[elem].append([1, 1, 1])
+        self.move = move
+        self.abfs = abfs
+
+    @property
+    def positions_bohr(self):
+        new_positions = deepcopy(self.positions)
+        for pos in new_positions:
+            new_positions[pos] = np.array(new_positions[pos]) * self.lat0
+
+        return new_positions
+
+    def get_stru(self) -> str:
+        """Return the `STRU` file as a string"""
+
+        empty_line = ''
+        line = []
+        line.append("ATOMIC_SPECIES")
+        for elem in self.elements:
+            line.append(f"{elem}\t{self.masses[elem]}\t{self.pps[elem]}")
+        line.append(empty_line)
+        
+        if self.orbitals:
+            line.append("NUMERICAL_ORBITAL")
+            for elem in self.elements:
+                line.append(f"{self.orbitals[elem]}")
+            line.append(empty_line)
+
+        if self.abfs:
+            line.append("ABFS_ORBITAL")
+            for elem in self.elements:
+                line.append(f"{self.abfs[elem]}")
+            line.append(empty_line)
+            
+        line.append("LATTICE_CONSTANT")
+        line.append(str(self.lat0))
+        line.append(empty_line)
+
+        line.append("LATTICE_VECTORS")
+        for i in range(3):
+            line.append(" ".join(list_elem2str(self.cell[i])))
+        line.append(empty_line)
+            
+        line.append("ATOMIC_POSITIONS")
+        line.append(self._ctype)
+        line.append(empty_line)
+        for elem in self.elements:
+            line.append(f"{elem}\n{self.magmoms[elem]}\n{self.numbers[elem]}")
+            for j in range(self.numbers[elem]):
+                if self._ctype == "Cartesian":
+                    line.append(" ".join(list_elem2str(self.positions[elem][j]))+" "+" ".join(list_elem2str(self.move[elem][j])))
+                elif self._ctype == "Direct":
+                    line.append(" ".join(list_elem2str(self.scaled_positions[elem][j]))+" "+" ".join(list_elem2str(self.move[elem][j])))
+                elif self._ctype == "Cartesian_angstrom":
+                    line.append(" ".join(list_elem2str(self.positions_angstrom_lat0[elem][j]))+" "+" ".join(list_elem2str(self.move[elem][j])))
+            line.append(empty_line) 
+
+        return '\n'.join(line)
+
+    def write_stru(self, filename: str) -> None:
+        """write `STRU` file
+        
+        :params filename: absolute path of `STRU` file
+        """
+
+        with open(filename, 'w') as file:
+            file.write(self.get_stru())
+
+    def supercell_positions(self, kpt: list) -> Dict_str_list:
+        """Return supercell atomic positions
+        
+        :params kpt: list of number of k-points in each directions
+        """
+
+        lat_vec = np.array(self.cell) * self.lat0
+        R = deepcopy(self.positions_bohr)
+
+        nx, ny, nz = kpt
+        for pos in R:
+            R_new = []
+            for ix in range(nx):
+                for iy in range(ny):
+                    for iz in range(nz):
+                        R_new.append(R[pos]+np.dot(np.array([ix,iy,iz]), lat_vec))
+            R[pos] = np.concatenate(R_new)
+
+        return R
+
+def read_stru(ntype: int, stru_file: str_PathLike) -> Stru:
     """
     Read `STRU` file
 
@@ -106,154 +253,9 @@ def read_stru(ntype, stru_file=""):
                     positions_angstrom_lat0[elem] = R_tmp
                 move[elem] = move_tmp
 
-    return Stru(elements=elements, positions=positions, scaled_positions=scaled_positions, positions_angstrom_lat0=positions_angstrom_lat0, lat0=lat0, cell=cell, pps=pps, orbitals=orbitals, numbers=numbers, masses=masses, magmoms=magmoms, move=move, abfs=abfs)
+    return Stru(lat0, cell, pps, positions=positions, scaled_positions=scaled_positions, positions_angstrom_lat0=positions_angstrom_lat0, orbitals=orbitals, masses=masses, magmoms=magmoms, move=move, abfs=abfs)
 
-class Stru:
-    """ABACUS `STRU` file information"""
-
-    def __init__(self, elements=[], positions={}, scaled_positions={}, positions_angstrom_lat0={}, lat0=None, cell=[], pps={}, orbitals={}, numbers={}, masses={}, magmoms={}, move={}, abfs={}) -> None:
-        """Initialize Stru object
-        
-        :params elements: list, list of atomic species. Default: []
-        :params positions: dict, key is element name and value is list of atomic Cartesian coordinates in unit lat0. Default: {}
-        :params scaled_positions: dict, key is element name and value is list of atomic direct coordinates in unit lat0. This parameter had better not be set at the same time with `positions`. 
-                                Because Cartesian coordinates will be calculated automatically based on direct coordinates and lattice vector `cell`. So self.positions still exists. Default: {}
-        :params positions_angstrom_lat0: dict, key is element name and value is list of atomic Cartesian_angstrom coordinates in unit lat0. This parameter had better not be set at the same time with `positions`. 
-                                Because Cartesian coordinates will be calculated automatically based on Cartesian_angstrom coordinates. So self.positions still exists. Default: {}
-        :params lat0: int, lattice constant in unit bohr. Default: None
-        :params cell: list, lattice vector in unit `lat0`. Default: []
-        :params pps: dict, dict of pseudopotential file. Default: {}
-        :params orbitals: dict, dict of orbital file. Default: {}
-        :params numbers: dict, dict of numbers of atom. Default: {}
-        :params masses: dict, dict of atomic mass. Default: {}
-        :params magmoms: dict, dict of magnetic moment. Default: {}
-        :params move: dict, key is element name and value is list of 1 or 0, `1` means atom can move. Default: {}
-        :params abfs: dict, dict of ABFs for hybrid functional calculation. Default: {}
-        """
-
-        self.elements = elements
-        self.ntype = len(self.elements)
-        self.lat0 = lat0
-        self.cell = cell
-        if positions and scaled_positions and positions_angstrom_lat0:
-            raise TypeError("'positions', 'scaled_positions' and `positions_angstrom_lat0` can not be set simultaneously")
-        elif positions:
-            self._ctype = "Cartesian"
-            self.scaled_positions = scaled_positions
-            self.positions = positions
-        elif scaled_positions:
-            self._ctype = "Direct"
-            self.scaled_positions = scaled_positions
-            self.positions = Direct2Cartesian(scaled_positions.copy(), self.cell)
-        elif positions_angstrom_lat0:
-            self._ctype = "Cartesian_angstrom"
-            self.positions_angstrom_lat0 = positions_angstrom_lat0
-            self.positions = Cartesian_angstrom2Cartesian(positions_angstrom_lat0)
-        else:
-            raise TypeError("One of 'positions' and 'scaled_positions' must be set")
-        self.pps = pps
-        self.orbitals = orbitals
-        self.numbers = numbers
-        if len(masses) == 0:
-            self.masses = {elem:1 for elem in self.elements}
-        else:
-            self.masses = masses
-        if len(magmoms) == 0:
-            self.magmoms = {elem:0 for elem in self.elements}
-        else:
-            self.magmoms = magmoms
-        if len(move) == 0:
-            for i, elem in enumerate(self.elements):
-                for j in range(self.numbers[i]):
-                    move[elem].append([1, 1, 1])
-        self.move = move
-        self.abfs = abfs
-
-    @property
-    def positions_bohr(self):
-        new_positions = deepcopy(self.positions)
-        for pos in new_positions:
-            new_positions[pos] = np.array(new_positions[pos]) * self.lat0
-
-        return new_positions
-
-    def get_stru(self):
-        """Return the `STRU` file as a string"""
-
-        empty_line = ''
-        line = []
-        line.append("ATOMIC_SPECIES")
-        for elem in self.elements:
-            line.append(f"{elem}\t{self.masses[elem]}\t{self.pps[elem]}")
-        line.append(empty_line)
-        
-        if self.orbitals:
-            line.append("NUMERICAL_ORBITAL")
-            for elem in self.elements:
-                line.append(f"{self.orbitals[elem]}")
-            line.append(empty_line)
-
-        if self.abfs:
-            line.append("ABFS_ORBITAL")
-            for elem in self.elements:
-                line.append(f"{self.abfs[elem]}")
-            line.append(empty_line)
-            
-        line.append("LATTICE_CONSTANT")
-        line.append(str(self.lat0))
-        line.append(empty_line)
-
-        line.append("LATTICE_VECTORS")
-        for i in range(3):
-            line.append(" ".join(list_elem2str(self.cell[i])))
-        line.append(empty_line)
-            
-        line.append("ATOMIC_POSITIONS")
-        line.append(self._ctype)
-        line.append(empty_line)
-        for elem in self.elements:
-            line.append(f"{elem}\n{self.magmoms[elem]}\n{self.numbers[elem]}")
-            for j in range(self.numbers[elem]):
-                if self._ctype == "Cartesian":
-                    line.append(" ".join(list_elem2str(self.positions[elem][j]))+" "+" ".join(list_elem2str(self.move[elem][j])))
-                elif self._ctype == "Direct":
-                    line.append(" ".join(list_elem2str(self.scaled_positions[elem][j]))+" "+" ".join(list_elem2str(self.move[elem][j])))
-                elif self._ctype == "Cartesian_angstrom":
-                    line.append(" ".join(list_elem2str(self.positions_angstrom_lat0[elem][j]))+" "+" ".join(list_elem2str(self.move[elem][j])))
-            line.append(empty_line) 
-
-        return '\n'.join(line)
-
-    def write_stru(self, filename):
-        """write `STRU` file
-        
-        :params filename: absolute path of `STRU` file
-        """
-
-        with open(filename, 'w') as file:
-            file.write(self.get_stru())
-
-    def supercell_positions(self, kpt):
-        """Return supercell atomic positions
-        
-        :params kpt: list of number of k-points in each directions
-        """
-
-        lat_vec = np.array(self.cell) * self.lat0
-        R = deepcopy(self.positions_bohr)
-
-        nx, ny, nz = kpt
-        for pos in R:
-            R_new = []
-            for ix in range(nx):
-                for iy in range(ny):
-                    for iz in range(nz):
-                        R_new.append(R[pos]+np.dot(np.array([ix,iy,iz]), lat_vec))
-            R[pos] = np.concatenate(R_new)
-
-        return R
-
-def cal_dis(positions={}):
+def cal_dis(positions: dict) -> Dict_Tuple_Dict:
     """Calculate distance between two atoms
     
     :params positions: dict, key is element name and value is list of atomic Cartesian coordinates in unit lat0
@@ -270,7 +272,7 @@ def cal_dis(positions={}):
 
     return dis
 
-def cut_dis(dis, Rcut):
+def cut_dis(dis: Dict_Tuple_Dict, Rcut: Dict_str_float) -> Dict_Tuple_Dict:
     """Cut off distance between two atoms based on their orbitals cut-off radius
     
     :params dis: dict, distance between two atoms. Its format is `dis[T1,T2] = {..., i_dis:num, ...}`
@@ -283,7 +285,7 @@ def cut_dis(dis, Rcut):
 
     return dis
 
-def round_dis(dis, precision):
+def round_dis(dis: Dict_Tuple_Dict, precision: float) -> Dict_Tuple_Dict:
     """Handle the precision of distance value
     
     :params dis: dict, distance between two atoms. Its format is `dis[T1,T2] = {..., i_dis:num, ...}`
@@ -299,7 +301,7 @@ def round_dis(dis, precision):
 
     return dis_round
 
-def delete_zero(dis):
+def delete_zero(dis: Dict_Tuple_Dict) -> Dict_Tuple_Dict:
     """Delete zero in dict, list or set"""
 
     dis_new = dis.copy()
@@ -313,40 +315,79 @@ def delete_zero(dis):
 
     return dis_new
 
-def read_kpt(kpt_file=""):
-    """Read `KPT` file
+# KPT
+class Kpt:
+    """K-points information"""
+
+    def __init__(self, mode: str, numbers:list=[], special_k: list=[], offset: list=[0.0, 0.0, 0.0]) -> None:
+        """Initialize Kpt object
+        
+        :params mode: ‘Gamma’, ‘MP’ or 'Line'
+        :params numbers: for ‘Gamma’ and ‘MP’ mode, list of three integers, for 'Line' mode, list of number of k points between two adjacent special k points.
+        :params special_k: 
+        :params offset: offset of the k grid. Default: [0.0, 0.0, 0.0]
+        """
+
+        self.mode = mode
+        self.numbers = numbers
+        self.special_k = special_k
+        self.offset = offset
+
+    def get_kpt(self) -> str:
+        """Return the `KPT` file as a string"""
+
+        line = []
+        line.append("K_POINTS")
+        if self.mode in ["Gamma", "MP"]:
+            line.append("0")
+            line.append(self.mode)
+            line.append(" ".join(list_elem2str(self.numbers+self.offset)))
+        elif self.mode == "Line":
+            line.append(str(len(self.special_k)))
+            line.append(self.mode)
+            for i, k in enumerate(self.special_k):
+                line.append(" ".join(list_elem2str(k+[self.numbers[i]])))
+
+        return '\n'.join(line)
+
+    def write_kpt(self, filename: str) -> None:
+        """write k-points file
+        
+        :params filename: absolute path of k-points file
+        """
+
+        with open(filename, 'w') as file:
+            file.write(self.get_kpt())
+
+def read_kpt(kpt_file: str_PathLike) -> Kpt:
+    """Read k-points file
     
-    :params kpt_file: absolute path of `KPT` file
+    :params kpt_file: absolute path of k-points file
     """
+    number = 0
     with open(kpt_file,"r") as file:
-        search_sentence(file, ["Gamma", "MP"])
-        line = skip_notes(file.readline()).split()
-        return list(map(int, line[:3])), list(map(float, line[3:]))
+        if search_sentence(file, ["K_POINTS", "KPOINTS", "K"]):
+            number = int(file.readline())
+        mode = search_sentence(file, ["Gamma", "MP", "Line"])
+        if mode in ["Gamma", "MP"]:
+            line = skip_notes(file.readline()).split()
+            numbers = list(map(int, line[:3]))
+            offset = list(map(float, line[3:]))
+            return Kpt(mode, numbers, special_k=[], offset=offset)
+        elif mode == "Line":
+            special_k = []
+            numbers = []
+            for k in range(number):
+                line = skip_notes(file.readline()).split()
+                special_k.append(list(map(float, line[:3])))
+                numbers.append(int(line[3]))
+            return Kpt(mode, numbers, special_k, offset=[])
 
-def read_orb(orbital):
-    """Read orbital file
-    
-    :params orbital: absolute path of orbital file
-    """
-    am = []
-    with open(orbital,"r") as file:
-        for line in file:
-            line = skip_notes(line)
-            if line.startswith("Element"):
-                element = line.split()[-1]
-            elif line.startswith("Energy Cutoff(Ry)"):
-                ecut = float(line.split()[-1])
-            elif line.startswith("Radius Cutoff(a.u.)"):
-                rcut = float(line.split()[-1])
-            elif line.startswith("Number of"):
-                am.append(int(line.split()[-1]))
-                
-    return Orb(element=element, ecut=ecut, rcut=rcut, am=am, datafile=orbital)
-
+# Orb
 class Orb:
     """Orbital information"""
 
-    def __init__(self, element="", ecut=None, rcut=None, am=[], datafile="") -> None:
+    def __init__(self, element: str, ecut: float, rcut: float, am: list, datafile: str_PathLike) -> None:
         """Initialize Orb object
         
         :params element: string of element name
@@ -366,5 +407,24 @@ class Orb:
     def total(self):
         """Return total number of orbitals"""
         return functools.reduce(operator.add, ((2*l+1)*n for l,n in enumerate(self.am)))
-
 #TODO: add a function to plot orbital
+
+def read_orb(orbital: str_PathLike) -> Orb:
+    """Read orbital file
+    
+    :params orbital: absolute path of orbital file
+    """
+    am = []
+    with open(orbital, "r") as file:
+        for line in file:
+            line = skip_notes(line)
+            if line.startswith("Element"):
+                element = line.split()[-1]
+            elif line.startswith("Energy Cutoff(Ry)"):
+                ecut = float(line.split()[-1])
+            elif line.startswith("Radius Cutoff(a.u.)"):
+                rcut = float(line.split()[-1])
+            elif line.startswith("Number of"):
+                am.append(int(line.split()[-1]))
+                
+    return Orb(element=element, ecut=ecut, rcut=rcut, am=am, datafile=orbital)

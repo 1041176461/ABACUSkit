@@ -6,6 +6,8 @@ Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 '''
 
 from pyautotest.calculations.baseclass import ABACUSCalculation
+from pyautotest.calculations.structure import Stru, Kpt
+from pyautotest.utils.typings import *
 
 import glob
 import shutil
@@ -14,62 +16,58 @@ from pathlib import Path
 class NSCF(ABACUSCalculation):
     """NSCF calculation"""
 
-    def __init__(self, input_dict, src, **kwargs) -> None:
+    def __init__(self, input_dict: dict, stru: typing.Optional[Stru], kpt: typing.Optional[Kpt], **kwargs) -> None:
         """Set input parameters of nscf calcultion
         
         :params input_dict: dict of input parameters
-        :params src: path of example which will be tested
+        :params stru: object of `pyautotest.calculations.structure.Stru`
+        :params kpt: object of `pyautotest.calculations.structure.Kpt`
         """
-        
-        super().__init__(input_dict, src, **kwargs)
+
+        super().__init__(input_dict, stru, kpt, **kwargs)
         self.input_dict["calculation"] = "nscf"
 
 class BAND(NSCF):
     """Band calculation"""
 
-    def __init__(self, input_dict, src, **kwargs) -> None:
-        """Set input parameters of band calcultion"""
+    def __init__(self, input_dict: dict, stru: typing.Optional[Stru], kpt: typing.Optional[Kpt], density_file: str_PathLike="", **kwargs) -> None:
+        """Set input parameters of band calcultion
+        
+        :params input_dict: dict of input parameters
+        :params stru: object of `pyautotest.calculations.structure.Stru`
+        :params kpt: object of `pyautotest.calculations.structure.Kpt`
+        """
 
-        super().__init__(input_dict, src, **kwargs)
+        super().__init__(input_dict, stru, kpt, **kwargs)
         self.input_dict["start_charge"] = "file"
         self.input_dict["out_band"] = 1
+        self.density_file = density_file  # should be absolute path of density file
 
-        if "density_file" in kwargs.keys():
-            self.density_file = kwargs["density_file"]
-        else:
-            self.density_file = []
-
-    def _prepare(self, dst, **kwargs):
-        """Prepare input files for nscf calculation e.g. INPUT, STRU, KPT, orbital and pseudopotential files"""
-
-        super()._prepare(dst, **kwargs)
+    def _prepare(self, **kwargs):
+        """Prepare input files for nscf calculation"""
+        
+        super()._prepare(**kwargs)
         
         # KPT check
-        with open(Path(dst, "KPT"), 'r') as file:
-            if "Line\n" not in file.readlines():
-                raise Exception(f"The `KPT` file in {dst} is not proper to band calculation")
+        if self.kpt.mode != "Line":
+            raise Exception(f"The `KPT` file is not proper to band calculation")
 
-        # Density file
-        outdir = Path(dst, "OUT.test")
-        if not self.density_file:
-            if not glob.glob(str(outdir)+"/SPIN*_CHG") or not glob.glob(str(outdir)+"/HR_exx_*"):
-                raise FileNotFoundError(f"Can not find density files in {outdir}")
-        else:
-            if not outdir.exists:
-                outdir.mkdir()
+        # Density
+        outdir = "OUT.test"
+        Path(outdir).mkdir(exist_ok=True)
+        if not glob.glob(outdir+"/SPIN*_CHG") or not glob.glob(outdir+"/HR_exx_*"):
             for i in self.density_file:
-                shutil.copyfile(Path(self.src, i), Path(outdir, i))
+                shutil.copy(i, outdir)
 
-    def _parse(self, dst, **kwargs):
+    def _parse(self, **kwargs) -> dict:
         """parse output of nscf calculation
         
-        :param dst: directory where calculation executes
         :return: if `BANDS_*.dat` exists, return {"band_file" : 1}. If not, raise FileNotFoundError
         """
         
         res = {}
-        outdir = Path(dst, "OUT.test")
-        band = glob.glob(str(outdir)+"/BANDS_*.dat")
+        outdir = "OUT.test"
+        band = glob.glob(outdir+"/BANDS_*.dat")
         if band:
             res["band_file"] = 1    # if `band_file` exists, set 1 for autotest check
         else:

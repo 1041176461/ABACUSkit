@@ -4,7 +4,7 @@ LastEditors: jiyuyang
 LastEditTime: 2021-04-25 10:35:11
 Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 '''
-
+#TODO: refactor code with typing, logging, warnings etc.
 from pyautotest.core.run import Run
 from pyautotest.core.show import Show
 

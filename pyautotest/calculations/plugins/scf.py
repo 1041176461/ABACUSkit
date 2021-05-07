@@ -6,32 +6,32 @@ Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 '''
 
 from pyautotest.calculations.baseclass import ABACUSCalculation
-from pyautotest.calculations.structure import read_stru
+from pyautotest.calculations.structure import read_stru, Stru, Kpt
 
 import re
+import typing
 import numpy as np
-from pathlib import Path
 
 class SCF(ABACUSCalculation):
     """SCF calculation"""
 
-    def __init__(self, input_dict, src, **kwargs) -> None:
+    def __init__(self, input_dict: dict, stru: typing.Optional[Stru], kpt: typing.Optional[Kpt], **kwargs) -> None:
         """Set input parameters of scf calcultion
         
         :params input_dict: dict of input parameters
-        :params src: path of example which will be tested
-        :params dst: path of working directory
+        :params stru: object of `pyautotest.calculations.structure.Stru`
+        :params kpt: object of `pyautotest.calculations.structure.Kpt`
         """
 
-        super().__init__(input_dict, src, **kwargs)
+        super().__init__(input_dict, stru, kpt, **kwargs)
         self.input_dict["calculation"] = "scf"
         self.logfile = "OUT.test/running_scf.log"
 
-    def _parse(self, dst, **kwargs):
+    def _parse(self, **kwargs) -> dict:
         """parse output of scf calculation"""
         
         res = {}
-        with open(Path(dst, self.logfile), 'r') as file:
+        with open(self.logfile, 'r') as file:
             for line in file:
                 if re.search("!FINAL_ETOT_IS", line):
                     res["etot"] = float(re.search("[-+][0-9]+.[0-9]+", line).group())
@@ -45,24 +45,24 @@ class SCF(ABACUSCalculation):
 class RELAX(SCF):
     """Relax calculation"""
 
-    def __init__(self, input_dict, src, **kwargs) -> None:
+    def __init__(self, input_dict: dict, stru: typing.Optional[Stru], kpt: typing.Optional[Kpt], **kwargs) -> None:
         """Set input parameters of relax calcultion
         
         :params input_dict: dict of input parameters
-        :params src: path of example which will be tested
-        :params dst: path of working directory
+        :params stru: object of `pyautotest.calculations.structure.Stru`
+        :params kpt: object of `pyautotest.calculations.structure.Kpt`
         """
 
-        super().__init__(input_dict, src, **kwargs)
+        super().__init__(input_dict, stru, kpt, **kwargs)
         self.input_dict["calculation"] = "relax"
         self.input_dict["force"] = "1"
         self.logfile = "OUT.test/running_relax.log"
 
-    def _parse(self, dst, **kwargs):
+    def _parse(self, **kwargs) -> dict:
         """parse output of scf calculation"""
         
-        res = super()._parse(dst, **kwargs)
-        with open(Path(dst, self.logfile), 'r') as file:
+        res = super()._parse(**kwargs)
+        with open(self.logfile, 'r') as file:
             for line in file:
                 if re.search(r"TOTAL ATOM NUMBER = [0-9]+", line):
                     natom = int(re.search("[0-9]+", line).group())
@@ -75,7 +75,7 @@ class RELAX(SCF):
                         force[i] = (float(fx), float(fy), float(fz))
                     res["force_mean"] = force.mean()
 
-        obj = read_stru(self.input_dict["ntype"], Path(dst, "OUT.test/STRU_ION_D"))
+        obj = read_stru(self.input_dict["ntype"], "OUT.test/STRU_ION_D")
         plist = []
         for elem in obj.elements:
             plist = np.mean(obj.positions[elem])
@@ -87,24 +87,24 @@ class RELAX(SCF):
 class CELL_RELAX(RELAX):
     """Cell relax calculation"""
 
-    def __init__(self, input_dict, src, **kwargs) -> None:
+    def __init__(self, input_dict: dict, stru: typing.Optional[Stru], kpt: typing.Optional[Kpt], **kwargs) -> None:
         """Set input parameters of cell-relax calcultion
         
         :params input_dict: dict of input parameters
-        :params src: path of example which will be tested
-        :params dst: path of working directory
+        :params stru: object of `pyautotest.calculations.structure.Stru`
+        :params kpt: object of `pyautotest.calculations.structure.Kpt`
         """
 
-        super().__init__(input_dict, src, **kwargs)
+        super().__init__(input_dict, stru, kpt, **kwargs)
         self.input_dict["calculation"] = "cell-relax"
         self.input_dict["stress"] = "1"
         self.logfile = "OUT.test/running_cell-relax.log"
 
-    def _parse(self, dst, **kwargs):
+    def _parse(self, **kwargs) -> dict:
         """parse output of cell-relax calculation"""
         
-        res = super()._parse(dst, **kwargs)
-        with open(Path(dst, self.logfile), 'r') as file:
+        res = super()._parse(**kwargs)
+        with open(self.logfile, 'r') as file:
             for line in file:
                 if re.search("TOTAL-STRESS \(KBAR\)", line):
                     stress = np.zeros((3, 3))

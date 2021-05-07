@@ -6,158 +6,126 @@ Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 '''
 
 from pyautotest.schedulers.data import Code
+from pyautotest.calculations.structure import Stru, Kpt
+from pyautotest.utils.typings import *
 
 import os
 import re
 import abc
 import shutil
+import typing
 from pathlib import Path
 
 class JobCalculation(abc.ABC):
     """Single job calculation"""
 
-    def __init__(self, input_dict, src, **kwargs) -> None:
+    def __init__(self, **kwargs) -> None:
         """Set input parameters of single job calcultion"""
 
-        self.input_dict = input_dict
-        self.src = Path(src)
+        self.kwargs = kwargs
+
+    def __str__(self) -> str:
+        return self.__class__.__name__
 
     @abc.abstractmethod
-    def _prepare(self, dst, **kwargs):
-        """Prepare input files for a job e.g. INPUT, STRU, KPT, orbital and pseudopotential files
-        
-        :params dst: path of working directory
-        """
+    def _prepare(self, **kwargs):
+        """Prepare input files for a job"""
 
-    def _execute(self, dst, command, **kwargs):
+    def _execute(self, command: Command, **kwargs):
         """Execute calculation
 
-        :params dst: path of working directory
         :params command: string or `pyautotest.schedulers.data.Code` object to execute calculation
         """
 
-        current_path = Path.cwd()
-        os.chdir(dst)
-        if isinstance(command, str):
-            os.system(command)
-        elif isinstance(command, Code):
-            os.system(command.run_line())
-        else:
-            raise TypeError("Type of `command` must be `str` or `pyautotest.schedulers.data.Code` object")
-        os.chdir(current_path)
+        if isinstance(command, Code):
+            command = command.run_line()
+
+        os.system(command)
 
     @abc.abstractmethod
-    def _check(self, dst, **kwargs):
-        """Check if job is finished
-        
-        :params dst: path of working directory
-        """
+    def _check(self, **kwargs):
+        """Check if job is finished"""
 
     @abc.abstractmethod
-    def _parse(self, dst, **kwargs):
+    def _parse(self, **kwargs) -> dict:
         """Parse output of a finished job
         
-        :params dst: path of working directory
         :return: some result
         """
 
         res = {}
         return res
 
-    def get_input_dict(self):
-        """Return a dictionary of input parameters"""
-        return self.input_dict
+    def calculate(self, command: Command, save_dir: str_PathLike="", **kwargs):
+        """The whole process of job calculation
 
-    def calculate(self, dst, command, **kwargs):
-        """The whole process of job calculation"""
+        :params command: string or `pyautotest.schedulers.data.Code` object to execute calculation
+        """
 
-        self._prepare(dst, **kwargs)
-        self._execute(dst, command, **kwargs)
-        self._check(dst, **kwargs)
-        res = self._parse(dst, **kwargs)
+        self._prepare(**kwargs)
+        self._execute(command, **kwargs)
+        self._check(**kwargs)
+        res = self._parse(**kwargs)
+        if save_dir:
+            self.save(save_dir)
         return res
+
+    def save(self, save_dir: str_PathLike):
+        """Save all input and out files of last calculation
+        
+        :params save_dir: directory where to save all input and output files
+        """
+
+        all_files =  Path(".").iterdir()
+        Path(save_dir).mkdir(parents=True, exist_ok=False)
+        for file in all_files:
+            if Path(file).is_file():
+                shutil.copy(file, save_dir)
 
 class ABACUSCalculation(JobCalculation):
     """ABACUS Calculation"""
 
-    def __init__(self, input_dict, src, **kwargs) -> None:
+    def __init__(self, input_dict: dict, stru: typing.Optional[Stru], kpt: typing.Optional[Kpt], **kwargs) -> None:
         """Set input parameters of ABACUS calcultion
         
         :params input_dict: dict of input parameters
-        :params src: path of example which will be tested
+        :params stru: object of `pyautotest.calculations.structure.Stru`
+        :params kpt: object of `pyautotest.calculations.structure.Kpt`
         """
 
-        super().__init__(input_dict, src, **kwargs)
+        super().__init__(**kwargs)
+        self.input_dict = input_dict
         self.input_dict["suffix"] = "test"
         if "ntype" not in self.input_dict.keys():
             raise KeyError("Need to set input_dict['ntype']")
+        self.stru = stru
+        self.kpt = kpt
 
-        if "orbitals" in kwargs.keys():
-            self.orbitals = kwargs["orbitals"]
-        else:
-            self.orbitals = {}
-
-        if "pps" in kwargs.keys():
-            self.pps = kwargs["pps"]
-        else:
-            self.pps = {}
-            
-        if "stru_file" in kwargs.keys():
-            self.stru_file = kwargs["stru_file"]
-        else:
-            self.stru_file = "STRU"
-            
-        if "kpt_file" in kwargs.keys():
-            self.kpt_file = kwargs["kpt_file"]
-        else:
-            self.kpt_file = "KPT"
-
-    def _prepare(self, dst, **kwargs):
-        """Prepare input files for ABACUS calculation e.g. INPUT, STRU, KPT, orbital and pseudopotential files
-        
-        :params dst: path of working directory
-        """
+    def _prepare(self, **kwargs):
+        """Prepare input files for ABACUS calculation"""
 
         # INPUT
         input_lines = self._get_input_line()
-        with open(Path(dst, "INPUT"), 'w') as file:
+        with open("INPUT", 'w') as file:
             file.write(input_lines)
 
         # STRU
-        shutil.copyfile(Path(self.src, self.stru_file), Path(dst, "STRU"))
+        self.stru.write_stru("STRU")
 
         # KPT
         if "gamma_only" not in self.input_dict.keys() or self.input_dict["gamma_only"] == 0:
-            if "kpoint_file" in self.input_dict.keys():
-                shutil.copyfile(Path(self.src, self.input_dict["kpoint_file"]), Path(dst, self.input_dict["kpoint_file"]))
-            else:
-                shutil.copyfile(Path(self.src, self.kpt_file), Path(dst, "KPT"))
+            self.kpt.write_kpt("KPT")
         elif self.input_dict["gamma_only"] != 1:
-            raise FileNotFoundError("Can not find k-points file.")
+            raise FileNotFoundError("`gamma_only` can only be 1 or 0.")
 
-        # Orbital
-        if  self.orbitals:
-            for i in self.orbitals.values():
-                shutil.copyfile(Path(self.src, i), Path(dst, i))
-        elif self.input_dict["basis_type"] in ["lcao", "lcao_in_pw"]:
-            raise FileNotFoundError(f"Can not find orbital files in {self.src}.")
-        
-        # Pseudopotential
-        if self.pps:
-            for i in self.pps.values():
-                shutil.copyfile(Path(self.src, i), Path(dst, i))
-        elif not self.input_dict["pseudo_dir"]:
-            raise FileNotFoundError(f"Can not find pseudopotential files in {self.src}.")
-
-    def _check(self, dst, index=0, **kwargs):
+    def _check(self, index=0, **kwargs) -> typing.Union[int, str]:
         """Check if job is finished
         
-        :params dst: path of working directory
         :params index: calculation index in workflow
         """
 
         time = 0
-        with open(Path(dst, f"cal_{index}.log"), 'r') as file:
+        with open(f"cal_{index}.log", 'r') as file:
             for line in file:
                 if re.search("TOTAL  Time  : ", line):
                     time = re.search("(TOTAL  Time  : )([a-z0-9\s]+)", line).group(2)
@@ -176,6 +144,11 @@ class ABACUSCalculation(JobCalculation):
                 lines.append(f"{key.ljust(30)}{value}")
         return '\n'.join(lines)
     
+    def get_input_dict(self):
+        """Return a dictionary of input parameters"""
+
+        return self.input_dict
+    
     @staticmethod
     def get_input_line(input_dict):
         """Return input lines in INPUT file
@@ -189,16 +162,3 @@ class ABACUSCalculation(JobCalculation):
             if value:
                 lines.append(f"{key.ljust(30)}{value}")
         return '\n'.join(lines)
-
-    def save(self, dst, save_dir):
-        """Save all input and out files of last calculation
-        
-        :params dst: path of working directory
-        :params save_dir: directory where to save all input and output files
-        """
-
-        all_files =  Path(dst).iterdir()
-        Path(save_dir).mkdir(parents=True, exist_ok=False)
-        for file in all_files:
-            if Path(file).is_file():
-                shutil.copy2(file, save_dir)

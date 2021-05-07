@@ -1,3 +1,9 @@
+'''
+Date: 2021-04-28 21:26:54
+LastEditors: jiyuyang
+LastEditTime: 2021-05-06 16:17:30
+Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
+'''
 distance = {
 	"H":	[	0.6,	0.75,	0.9,	1.2,	1.5	],
 	"He":	[	1.25,	1.75,	2.4,	3.25	],

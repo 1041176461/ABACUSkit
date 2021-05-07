@@ -1,18 +1,18 @@
 ATOMIC_SPECIES
-Mg      1      Mg_ONCV_PBE-1.0.upf 
-O      1      O_ONCV_PBE-1.0.upf 
+Mg	1.0	Mg_ONCV_PBE-1.0.upf
+O	1.0	O_ONCV_PBE-1.0.upf
 
 NUMERICAL_ORBITAL
-Mg_pbe_9.0au_100Ry_4s2p1d 
-O_pbe_7.0au_100Ry_2s2p1d
+Mg_pbe_9.0au_100Ry_4s2p1d_dpsi
+O_pbe_7.0au_100Ry_2s2p1d_dpsi
 
 LATTICE_CONSTANT
 1.889766
 
 LATTICE_VECTORS
-0.0     2.1065        2.1065
-2.1065        0.0      2.1065
-2.1065        2.1065        0.0
+0.0 2.1065 2.1065
+2.1065 0.0 2.1065
+2.1065 2.1065 0.0
 
 ATOMIC_POSITIONS
 Direct
@@ -20,9 +20,9 @@ Direct
 Mg
 0.5
 1
-0.0     0.0     0.0     0 0 0
+0.0 0.0 0.0 0 0 0
 
 O
 0.5
 1
-0.5    0.5    0.5    0 0 0
+0.5 0.5 0.5 0 0 0

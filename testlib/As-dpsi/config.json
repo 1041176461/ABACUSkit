@@ -8,19 +8,16 @@
                 "stdin_name"            :   null,
                 "join_files"            :   false
             },
-            "input_params"     	:    {
-		"ntype"		:	1,
-                "ecutwfc"       :   	100,
-		"nbands"	:	15,
-		"sigma"		:       0.01
-            },
-	    "element"		:   "Ga",
-	    "Nu"		:   [2,2,2],
-	    "rcut"		:   9,
-	    "ref_band"		:   13,
-	    "target"		:   1,
-	    "count"		:   1,
-	    "pps"		:   {"Ga":"Ga_ONCV_PBE-1.0.upf"}
+            "ecutwfc"       	:   	100,
+	    "nbands"		:	8,	
+            "sigma"		:       0.01,
+	    "element"		:   	"As",
+	    "Nu"		:   	[2,2,1],
+	    "rcut"		:   	8,
+	    "ref_band"		:   	5,
+	    "target"		:   	1,
+	    "count"		:   	1,
+	    "pps"		:   	{"As":"As_ONCV_PBE-1.0.upf"}
         }
     }
 }

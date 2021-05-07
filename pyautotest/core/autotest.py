@@ -6,22 +6,24 @@ Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 '''
 
 from pyautotest.schedulers.data import Code
+from pyautotest.utils.typings import *
+from pyautotest.calculations.structure import *
 
 import re
+import os
 import json
+import shutil
 from pathlib import Path
 from collections import OrderedDict
 
-def set_cal(name="", **kwargs):
+def set_cal(name: str, input_dict: dict, stru: Stru, kpt: Kpt, **kwargs):
     module, cal = name.split('.')
     exec(f"""from pyautotest.calculations.plugins.{module} import {cal}""")
-    return eval(f"{cal}(**{kwargs})")
+    return eval(f"{cal}(input_dict=input_dict, stru=stru, kpt=kpt, **{kwargs})")
 
-def configure(config_file, src="", dst="", version=[]):
-    """Configure parameters for Autotest
-    
-    :params src: str, path of source directory
-    :params dst: str, path of working directory
+def configure(config_file: str_PathLike, version: list) -> Return_2:
+    """Configure commands and workflow for Autotest
+
     :params config_file: configure file for Autotest
     :params version: list of absolute path of executable file
     """
@@ -30,8 +32,8 @@ def configure(config_file, src="", dst="", version=[]):
     allcommands = []
     with open(config_file, 'r') as file:
         text = json.load(file)
+    src = Path(config_file).parent
     workflowinput = text["workflow"]
-    independent = text.pop("independent", False)
     for index, cal in enumerate(workflowinput.keys()):
         if re.match(f"cal_{index}", cal):
             cal_elem = workflowinput[cal]
@@ -44,7 +46,7 @@ def configure(config_file, src="", dst="", version=[]):
             join_files=code.pop("join_files", False)
             withmpi=code.pop("withmpi", "mpirun")
             commands = []
-            for ver in version:
+            for j, ver in enumerate(version):
                 commands.append(Code(code_name=ver,
                                     cmdline_params=cmdline_params, 
                                     stdin_name=stdin_name, 
@@ -54,14 +56,23 @@ def configure(config_file, src="", dst="", version=[]):
                                     withmpi=withmpi
                                     ))
             allcommands.append(commands)
-            input_dict = cal_elem.pop("input_params")
-            if independent:
-                obj = set_cal(name, input_dict=input_dict, src=src, **cal_elem)
+            input_dict = cal_elem.pop("input_params", None)
+
+            # STRU
+            stru_file = src/cal_elem.pop("stru_file", "STRU")
+            if stru_file.exists():
+                stru = read_stru(input_dict["ntype"], stru_file)
             else:
-                if index == 0:
-                    obj = set_cal(name, input_dict=input_dict, src=src, **cal_elem)
-                else:
-                    obj = set_cal(name, input_dict=input_dict, src=dst, **cal_elem)
+                stru = None
+
+            # KPT
+            kpt_file = src/cal_elem.pop("kpt_file", "KPT")
+            if kpt_file.exists():
+                kpt = read_kpt(kpt_file)
+            else:
+                kpt = None
+
+            obj = set_cal(name=name, input_dict=input_dict, stru=stru, kpt=kpt, **cal_elem)
             workflow.append(obj)
         else:
             raise KeyError("Wrong keyword `cal` settings, it should be set in numerical order.")
@@ -71,51 +82,62 @@ def configure(config_file, src="", dst="", version=[]):
 class Autotest:
     """Auto-test for ABACUS"""
 
-    def __init__(self, dst="", workflow=[]):
+    def __init__(self, workflow: list):
         """Initialize for auto-test
-        
-        :params dst: str, path of working directory
+
         :params workflow: list, list of class, e.g. [SCF(**kwargs), Band(**kwargs)]
         """
-        
-        self.dst = dst
+
         self.workflow = workflow
 
-    def calculate(self, command, save_files=False, external_command=''):
+    def calculate(self, command: Command, external_command: Command="", save_files: bool=False) -> dict:
         """The whole process of auto-test
         
-        :params command: string of command line or `pyautotest.schedulers.data.Code` object. Default: ""
+        :params command: string of command line or `pyautotest.schedulers.data.Code` object.
+        :params external_command: other non-ABACUS code needed. Default: ""
         :params save_files: save input files of last calculation or not. Default: False
         """
 
-        subdst = Path(self.dst)
-        subdst.mkdir(parents=True, exist_ok=False)
         for index, cal in enumerate(self.workflow):
-            res = cal.calculate(dst=subdst, command=command, index=index, external_command=external_command)
             if save_files:
-                cal.save(dst=subdst, save_dir=Path(subdst, f"cal_{str(index)}"))
-                
+                save_dir = f"cal_{str(index)}"
+            else:
+                save_dir = ""
+            print(f"Begin {cal.__str__()}", flush=True)
+            res = cal.calculate(command=command, index=index, external_command=external_command, save_dir=save_dir)
+            print(f"End {cal.__str__()}", flush=True)
         return res
 
-    def compare(self, commands=[], save_files=False, external_command=''):
+    def compare(self, commands: List_Command, external_command: Command="", save_files: bool=False):
         """Comparison test between different commands
         
         :params commands: list of commands string or `pyautotest.schedulers.data.Code` object
+        :params external_command: other non-ABACUS code needed Default: ""
         :params save_files: save input files of last calculation or not. Default: False
-        :params external_command: other non-ABACUS code needed
         """
 
         res = OrderedDict()
         for index, cal in enumerate(self.workflow):
+            print(f"Begin {cal.__str__()}", flush=True)
             for j, command in enumerate(commands[index]):
-                subdst = Path(self.dst, f"command_{j}")
-                subdst.mkdir(parents=True, exist_ok=True)
-                res[f"command_{j}"] = cal.calculate(dst=subdst, command=command, index=index, external_command=external_command)
+                subdst = Path(f"command_{j}")
+                if not subdst.exists():
+                    subdst.mkdir(parents=True)
+                    for i in os.listdir("./"):
+                        subfile = os.path.join(i)
+                        if os.path.isfile(subfile):
+                            shutil.copy(subfile, subdst)
+                os.chdir(subdst)
                 if save_files:
-                    cal.save(dst=subdst, save_dir=Path(subdst, f"cal_{str(index)}"))
+                    save_dir = f"cal_{index}"
+                else:
+                    save_dir = ""
+                res[f"command_{j}"] = cal.calculate(command=command, index=index, external_command=external_command, save_dir=save_dir)
+                os.chdir("../")
+            print(f"End {cal.__str__()}", flush=True)
             self._check(res)
     
-    def _check(self, res):
+    def _check(self, res: dict):
         for index, version in enumerate(res.items()):
             value_version = version[1]
             if index >= 1:

@@ -13,7 +13,7 @@ import json
 def set_scheduler(
 				scheduler,
 				codes_info,
-				num_machines,
+				num_machines=None,
 				num_mpiprocs_per_machine=None,
 				num_cores_per_machine=None,
 				num_cores_per_mpiproc=None,

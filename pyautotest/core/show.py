@@ -7,12 +7,13 @@ Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 
 import os
 from pyautotest.utils.tools import read_json
+from pyautotest.utils.typings import *
 
 class Show:
     """Show auto-test information"""
 
     @classmethod
-    def show_libinfo(cls, src):
+    def show_libinfo(cls, src: str_PathLike):
         """Show example library information
     
         :params src: path of library

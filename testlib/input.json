@@ -1,19 +1,19 @@
 {
-    "src"               :   "/home/jiyy/ABACUS/AutoTest/new/testlib",
-    "dst"               :   "/home/jiyy/ABACUS/AutoTest/new/test",
+    "src"               :   "/home/jiyy/ABACUS/AutoTest/new_2/testlib/Si",
+    "dst"               :   "/home/jiyy/ABACUS/AutoTest/new_2/test/Si",
     "version"           :   ["/home/jiyy/ABACUS/ABACUS_git_exx/git210119/bin/ABACUS.mpi.1.0.0_exx_fixdm3bug_avx2"],
-    "external_command"	:   "python -u /home/jiyy/ABACUS/ABACUS_git_exx/tools/opt_orb_pytorch/main.py > job.log 2>job.err",
-    "save_files"        :   true,
+    "external_command"	:   "python -u /home/jiyy/ABACUS/ABACUS_git_exx/dpsi/tools/opt_orb_pytorch_dpsi/main.py > job.log 2>job.err",
+    "save_files"        :   false,
     "job_resource"      : {
         "num_machines"              :   1,
-        "num_mpiprocs_per_machine"  :   28
+        "num_mpiprocs_per_machine"  :   16
     },
     "script_params"     : {
         "scheduler"                 :   "torque",
         "sched_output_path"         :   "job.log",
         "sched_error_path"          :   "job.err",
         "queue_name"                :   "gold5120",
-        "max_wallclock_seconds"     :   720000,
+        "max_wallclock_seconds"     :   36000,
         "import_sys_environment"    :   true
-    }
+     }
 }
