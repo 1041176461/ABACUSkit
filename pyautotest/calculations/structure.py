@@ -16,7 +16,6 @@ import decimal
 from copy import deepcopy
 from collections import defaultdict
 
-
 # STRU
 def Direct2Cartesian(positions: Dict_str_list, cell: Dict_str_float) -> Dict_str_list:
     """Transform direct coordinates to Cartesian format in unit lat0

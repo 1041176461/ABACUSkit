@@ -405,7 +405,7 @@ class OptABFs(JobCalculation):
         #ABFs
         for elem in self.stru.elements:
             filename = f"{self.folder_opt}/orb_{elem}.dat"
-            datafile = f"{subdst}/abfs_{elem}.dat"
+            datafile = f"abfs_{elem}.dat"
             self.stru.abfs[elem] = datafile
             shutil.copyfile(filename, datafile)
 
@@ -484,3 +484,23 @@ class EXX(SCF):
             raise FileNotFoundError("`gamma_only` can only be 1 or 0.")
         os.system(command.run_line())
         os.chdir(current_path)
+
+    def _check(self, index, **kwargs) -> typing.Union[int, str]:
+        """Check if job is finished"""
+
+        current_path = Path.cwd()
+        os.chdir("exx_"+"-".join(list_elem2str(self.Nu)))
+        time = super()._check(index=index, **kwargs)
+        os.chdir(current_path)
+
+        return time
+
+    def _parse(self, **kwargs) -> dict:
+        """parse output of scf calculation"""
+
+        current_path = Path.cwd()
+        os.chdir("exx_"+"-".join(list_elem2str(self.Nu)))
+        res = super()._parse(**kwargs)
+        os.chdir(current_path)
+
+        return res

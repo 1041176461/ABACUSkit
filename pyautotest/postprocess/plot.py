@@ -6,8 +6,6 @@ Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 '''
 
 import numpy as np
-import pandas as pd
-import plotly.express as px
 from typing import Sequence
 
 class BandPlot:
@@ -29,7 +27,7 @@ class BandPlot:
         return x, y
     
     @classmethod
-    def set_range(cls, energy:Sequence, energy_range:Sequence=[]):
+    def _set_range(cls, energy:Sequence, energy_range:Sequence=[]):
         """Set energy range
         
         :params energy: band energy list
@@ -69,6 +67,6 @@ class BandPlot:
 
         kpoints, energy = cls.read(filename)
         energy = cls.energy_minus_efermi(energy, efermi)
-        energy_range = cls.set_range(energy, energy_range)
+        energy_range = cls._set_range(energy, energy_range)
         
 
