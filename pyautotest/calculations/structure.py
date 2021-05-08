@@ -324,7 +324,7 @@ class Kpt:
         
         :params mode: ‘Gamma’, ‘MP’ or 'Line'
         :params numbers: for ‘Gamma’ and ‘MP’ mode, list of three integers, for 'Line' mode, list of number of k points between two adjacent special k points.
-        :params special_k: 
+        :params special_k: list of special k-points
         :params offset: offset of the k grid. Default: [0.0, 0.0, 0.0]
         """
 
@@ -351,13 +351,19 @@ class Kpt:
         return '\n'.join(line)
 
     def write_kpt(self, filename: str) -> None:
-        """write k-points file
+        """Write k-points file
         
         :params filename: absolute path of k-points file
         """
 
         with open(filename, 'w') as file:
             file.write(self.get_kpt())
+
+    @property
+    def label_special_k(self):
+        """Label special k-points based on `numbers` list"""
+
+        return np.cumsum(np.concatenate([1], self.numbers), axis=0)[:len(self.special_k)]
 
 def read_kpt(kpt_file: str_PathLike) -> Kpt:
     """Read k-points file
@@ -387,26 +393,26 @@ def read_kpt(kpt_file: str_PathLike) -> Kpt:
 class Orb:
     """Orbital information"""
 
-    def __init__(self, element: str, ecut: float, rcut: float, am: list, datafile: str_PathLike) -> None:
+    def __init__(self, element: str, ecut: float, rcut: float, Nu: list, datafile: str_PathLike) -> None:
         """Initialize Orb object
         
         :params element: string of element name
         :params ecut: energy cutoff in unit Rydberg
         :params rcut: radius cutoff in unit bohr
-        :params am: list of number of orbitals of each angular momentum
+        :params Nu: list of number of orbitals of each angular momentum
         :params datafile: absolute path of orbital file
         """
 
         self.element = element
         self.ecut = ecut
         self.rcut = rcut
-        self.am = am
+        self.Nu = Nu
         self.datafile = datafile
 
     @property
     def total(self):
         """Return total number of orbitals"""
-        return functools.reduce(operator.add, ((2*l+1)*n for l,n in enumerate(self.am)))
+        return functools.reduce(operator.add, ((2*l+1)*n for l,n in enumerate(self.Nu)))
 #TODO: add a function to plot orbital
 
 def read_orb(orbital: str_PathLike) -> Orb:
@@ -414,7 +420,7 @@ def read_orb(orbital: str_PathLike) -> Orb:
     
     :params orbital: absolute path of orbital file
     """
-    am = []
+    Nu = []
     with open(orbital, "r") as file:
         for line in file:
             line = skip_notes(line)
@@ -425,6 +431,6 @@ def read_orb(orbital: str_PathLike) -> Orb:
             elif line.startswith("Radius Cutoff(a.u.)"):
                 rcut = float(line.split()[-1])
             elif line.startswith("Number of"):
-                am.append(int(line.split()[-1]))
+                Nu.append(int(line.split()[-1]))
                 
-    return Orb(element=element, ecut=ecut, rcut=rcut, am=am, datafile=orbital)
+    return Orb(element=element, ecut=ecut, rcut=rcut, Nu=Nu, datafile=orbital)

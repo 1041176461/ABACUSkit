@@ -142,7 +142,7 @@ class SetDimers(ABACUSCalculation):
         obj = Stru(positions=positions, lat0=lat0, cell=cell, pps=pps, orbitals=orbitals, masses=masses, magmoms=magmoms, move=move)
         obj.write_stru(folder/"STRU")
 
-        return str(folder)
+        return str(folder.resolve())
 
     def get_dis_opt(self, dis: Dict_Tuple_Dict, opt_mode: str="kmeans") -> Dict_Tuple_Dict:
         """Select some representative point in dictionary of distance

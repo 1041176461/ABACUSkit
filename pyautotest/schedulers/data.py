@@ -38,7 +38,7 @@ class Code:
         self.stderr_name = stderr_name          
         self.join_files = join_files             
         self.withmpi = withmpi                   
-        self.code_uuid = code_uuid               
+        self.code_uuid = code_uuid
 
     def run_line(self):
         """Return run lines """

@@ -20,6 +20,53 @@ import shutil
 import numpy as np
 from pathlib import Path
 
+def gen_config(element:str, nbands:int, ref_band:int, rcut:float, Nu:list, pps_file:str, cal_T:bool=True, cal_smooth:bool=True, sigma:float=0.01, ecutwfc:int=100, cmdline_params:list=["-n 4", "-env OMP_NUM_THREADS=1"], withmpi:list="mpirun", target:int=1, count:int=1, Dir:str_PathLike="./"):
+    """Get config.json for orbitals optimization
+    
+    :params element: string of element name
+    :params ref_band: number of reference bands
+    :params nbands: number of bands to calculate
+    :params rcut: cutoff of wavefunctions(a.u.)
+    :params Nu: size of LCAO, e.g. `[4,3,2,1]` means 4s3p2d1f
+    :params pps_file: string of pseudopotential file
+    :params cal_T: if fit kinetic energy: Default: True
+    :params cal_smooth: if use smooth method. Default: True
+    :params ecutwfc: energy cutoff for plane wave functions, the unit is Rydberg. Default: 100
+    :params sigma: energy range for smearing, the unit is Rydberg. Default: 0.01
+    :params cmdline_params: list of command line parameters. Default: ["-n 4", "-env OMP_NUM_THREADS=1"]
+    :params withmpi: string of MPI command. Default: "mpirun"
+    :params target: fitting target, 0 - wave function, 1 - wave function and its gradient. Default: 1
+    :params count: how many times does it take for all dimers to be calculated, each time `(number of dimers)/count` be calculated. Default: 1
+    """
+    pps = {}
+    pps[element] = pps_file
+    code = {}
+    code["cmdline_params"] = cmdline_params
+    code["withmpi"] = withmpi
+    config_dict = {
+        "workflow": {
+            "cal_0": {
+                "name": "opt_orb.LCAO",
+                "code": code,
+                "element": element,
+                "ref_band": ref_band,
+                "nbands": nbands,
+                "rcut": rcut,
+                "Nu": Nu,
+                "pps": pps,
+                "cal_T": cal_T,
+                "cal_smooth": cal_smooth,
+                "ecutwfc": ecutwfc,
+                "sigma": sigma,
+                "target": target,
+                "count": count,
+                }
+            }
+        }
+    filepath = Path(Dir, element)
+    with open(Path(filepath, "config.json"), 'w') as file:
+        json.dump(config_dict, file, indent=4)
+
 class SetDimers(JobCalculation):
     """Set and calculate dimers for atomic orbital(LCAO)"""
 
@@ -140,7 +187,7 @@ class SetDimers(JobCalculation):
         obj = Stru(positions_angstrom_lat0=positions_angstrom_lat0, lat0=lat0, cell=cell, pps=pps, masses=masses, magmoms=magmoms, move=move)
         obj.write_stru(folder/"STRU")
 
-        return str(folder)
+        return str(folder.resolve())
 
     def _execute(self, command: Command, count: int=1, **kwargs):
         """Execute calculation
@@ -150,6 +197,7 @@ class SetDimers(JobCalculation):
         """
 
         filename = "folders"
+        
         origin = [os.path.join(folder, "test.0.dat") for folder in self.folder_list]
         if self.target == 1:
             linear = [[os.path.join(folder, "test.1.dat") for folder in self.folder_list]]
@@ -166,8 +214,8 @@ class SetDimers(JobCalculation):
             line =  '\n'.join(commands)+"\nwait\n"
             return line
 
-        current_path = Path.cwd()
         lines = []
+        current_path = Path.cwd()
         all_list = np.array_split(self.folder_list, count)
         for one_list in all_list:
             lines.append(set_commands(one_list, command))
