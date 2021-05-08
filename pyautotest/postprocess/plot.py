@@ -5,12 +5,16 @@ LastEditTime: 2021-05-08 11:47:09
 Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 '''
 
-from copy import Error
 import numpy as np
+import pandas as pd
+import plotly.express as px
 from typing import Sequence
 
 class BandPlot:
     """Plot band structure"""
+
+    def __init__(self) -> None:
+        """Set figure"""
 
     @classmethod
     def read(cls, filename:str):
@@ -45,6 +49,15 @@ class BandPlot:
         return energy_range
 
     @classmethod
+    def energy_minus_efermi(cls, energy:Sequence , efermi:float):
+        """Return energy after subtracting the Fermi level
+        
+        :params efermi: Fermi level in unit eV
+        """
+
+        return np.array(energy)-efermi
+
+    @classmethod
     def plot(cls, filename:str, efermi:float, index:dict, energy_range:Sequence=[]):
         """Plot band structure
         
@@ -54,6 +67,8 @@ class BandPlot:
         :params energy_range: range of energy to plot
         """
 
-        x, y = cls.read(filename)
-        energy_range = cls.set_range(y, energy_range)
+        kpoints, energy = cls.read(filename)
+        energy = cls.energy_minus_efermi(energy, efermi)
+        energy_range = cls.set_range(energy, energy_range)
         
+

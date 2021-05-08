@@ -320,18 +320,18 @@ class OptABFs(JobCalculation):
         """Prepare input files for optimizing ABFs e.g. input.json"""
 
         self.folder_opt = Path("opt_orb_"+"-".join(list_elem2str(self.Nu)))
-        self.folder_opt_matrix = self.folder_opt/"matrix"
-        self.folder_opt_matrix.mkdir(parents=True, exist_ok=False)
+        folder_opt_matrix = self.folder_opt/"matrix"
+        folder_opt_matrix.mkdir(parents=True, exist_ok=False)
 
         if not Path("folders").exists():
             raise FileNotFoundError("'folders' which is a out file of `SetDimers` calculations not found.")
 
         self.folders_weight = read_json("folders")
-        self.set_matrix()
+        self.set_matrix(folder_opt_matrix)
         with open(self.folder_opt/"input.json", 'w') as file:
             json.dump(self.set_input(), file, indent=4)
 
-    def set_matrix(self):
+    def set_matrix(self, folder_opt_matrix):
         for folder_matrix in self.folders_weight:
             T1,T2 = folder_matrix.split("_")[0].split("-")
             dis = float(folder_matrix.split("_")[1])
@@ -342,7 +342,7 @@ class OptABFs(JobCalculation):
                     matrix_file = "matrix_0_0_1_0"
             else:
                 matrix_file = "matrix_0_0_0_0"
-            copy_file = self.folder_opt_matrix/folder_matrix
+            copy_file = folder_opt_matrix/folder_matrix
             shutil.copyfile(os.path.join(folder_matrix, matrix_file), copy_file)
             with open(copy_file, 'r') as file:
                 nband = int(re.compile(r"(\d+)\s+nbands").search(file.read()).group(1))
@@ -350,7 +350,7 @@ class OptABFs(JobCalculation):
     
     def set_input(self):
         input_params = {
-            "file_list": [str(self.folder_opt_matrix/folder_matrix) for folder_matrix in self.folders_weight], #TODO: for new dpsi scripts, it should be a dict with key "origin"
+            "file_list": [os.path.join("matrix", folder_matrix) for folder_matrix in self.folders_weight], #TODO: for new dpsi scripts, it should be a dict with key "origin"
             "info":
             {
                 "Nt_all":       self.stru.elements,
@@ -412,15 +412,6 @@ class OptABFs(JobCalculation):
         # STRU
         self.stru.write_stru(f"{subdst}/STRU")
         
-        # Orbitals
-        for obj in self.orb_obj_list:
-            shutil.copy(obj.datafile, subdst)
-
-        # Pseudopotential
-        if self.stru.pps:
-            for i in self.stru.pps.values():
-                shutil.copy(i, subdst)
-
         res = {"ABFs":1}
         return res
 
@@ -486,5 +477,10 @@ class EXX(SCF):
         input_lines = self._get_input_line()
         with open("INPUT", 'w') as file:
             file.write(input_lines)
+        # KPT
+        if "gamma_only" not in self.input_dict.keys() or self.input_dict["gamma_only"] == 0:
+            self.kpt.write_kpt("KPT")
+        elif self.input_dict["gamma_only"] != 1:
+            raise FileNotFoundError("`gamma_only` can only be 1 or 0.")
         os.system(command.run_line())
         os.chdir(current_path)

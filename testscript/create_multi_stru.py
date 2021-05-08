@@ -9,8 +9,9 @@ stru_path = Path(ppath, "STRU")
 filelist = os.listdir(ppath)
 filelist.remove("STRU")
 tpath = "./" # target directory
+ntype = 2
 
-obj = structure.read_stru(2, stru_path)
+obj = structure.read_stru(ntype, stru_path)
 latc = obj.lat0
 delta = 0.01
 for i in range(-1, 4):

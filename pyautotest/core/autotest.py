@@ -12,7 +12,6 @@ from pyautotest.calculations.structure import *
 import re
 import os
 import json
-import shutil
 from pathlib import Path
 from collections import OrderedDict
 
@@ -62,6 +61,10 @@ def configure(config_file: str_PathLike, version: list) -> Return_2:
             stru_file = src/cal_elem.pop("stru_file", "STRU")
             if stru_file.exists():
                 stru = read_stru(input_dict["ntype"], stru_file)
+                for elem in stru.elements:
+                    if input_dict and "pseudo_dir" not in input_dict.keys():
+                        stru.pps[elem] = Path(src, stru.pps[elem])
+                    stru.orbitals[elem] = Path(src, stru.orbitals[elem])
             else:
                 stru = None
 
@@ -123,10 +126,6 @@ class Autotest:
                 subdst = Path(f"command_{j}")
                 if not subdst.exists():
                     subdst.mkdir(parents=True)
-                    for i in os.listdir("./"):
-                        subfile = os.path.join(i)
-                        if os.path.isfile(subfile):
-                            shutil.copy(subfile, subdst)
                 os.chdir(subdst)
                 if save_files:
                     save_dir = f"cal_{index}"

@@ -11,7 +11,6 @@ from pyautotest.utils.tools import read_json, write_json
 from pyautotest.utils.typings import *
 
 import os
-import shutil
 
 class Run:
     """Ways to run Auto-test code"""
@@ -27,10 +26,6 @@ class Run:
         for i in range(len(version)):
             subdst = os.path.join(dst, f"command_{i}")
             os.makedirs(subdst)
-            for j in os.listdir(src):
-                subfile = os.path.join(src, j)
-                if os.path.isfile(subfile):
-                    shutil.copy(subfile, subdst)
         config_file = os.path.join(src, "config.json")
         if os.path.exists(config_file):
             commands, workflow = configure(config_file, version)
