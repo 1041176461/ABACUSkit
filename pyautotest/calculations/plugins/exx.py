@@ -12,6 +12,7 @@ from pyautotest.calculations.plugins.scf import SCF
 from pyautotest.schedulers.data import Code
 from pyautotest.utils.tools import *
 from pyautotest.utils.typings import *
+from pyautotest.utils.test import profile
 
 import re
 import os
@@ -52,6 +53,7 @@ class SetDimers(ABACUSCalculation):
         else: 
             raise FileNotFoundError("Can not find orbital files.")
 
+    @profile(column="time", list=5)
     def _prepare(self, **kwargs):
         """Prepare input files for dimers calculation"""
 
@@ -114,7 +116,7 @@ class SetDimers(ABACUSCalculation):
         input_copy["exx_opt_orb_lmax"] = len(self.Nu)-1
 
         # INPUT
-        input_lines = self.get_input_line(input_copy)
+        input_lines = get_input_line(input_copy)
         with open(folder/"INPUT", 'w') as file:
             file.write(input_lines)
 
@@ -267,7 +269,7 @@ class SetDimers(ABACUSCalculation):
         for folder in read_json("folders"):
             if not glob.glob(f"{folder}/matrix_*"):
                 import warnings
-                warnings.warn("'matrix_*' file not found in {folder}, it will execute again.")
+                warnings.warn(f"'matrix_*' file not found in {folder}, it will execute again.")
                 os.chdir(folder)
                 submit_command = set_scheduler(scheduler, codes_info, **kwargs)
                 os.system(submit_command)
@@ -407,7 +409,7 @@ class OptABFs(JobCalculation):
             filename = f"{self.folder_opt}/orb_{elem}.dat"
             datafile = f"abfs_{elem}.dat"
             self.stru.abfs[elem] = datafile
-            shutil.copyfile(filename, datafile)
+            shutil.copyfile(filename, Path(subdst, datafile))
 
         # STRU
         self.stru.write_stru(f"{subdst}/STRU")
@@ -419,7 +421,7 @@ class OptABFs(JobCalculation):
 class EXX(SCF):
     """Hybrid function calculation with off-site ABFs basis"""
 
-    def __init__(self, input_dict: dict, stru: typing.Optional[Stru], kpt: typing.Optional[Kpt], Nu: list, dimer_num: int, dr: float=0.01, lr: float=0.01, **kwargs) -> None:
+    def __init__(self, input_dict: dict, stru: typing.Optional[Stru], kpt: typing.Optional[Kpt], Nu: list, dimer_num: int=5, dr: float=0.01, lr: float=0.01, **kwargs) -> None:
         """Set input parameters of hybrid function calculation
 
         :params input_dict: dict of input parameters
@@ -447,10 +449,10 @@ class EXX(SCF):
     def _prepare(self, **kwargs):
         """Prepare input files for hybrid  e.g. input.json"""
 
-        self.obj_setdimers = SetDimers(self.input_dict, self.stru, self.kpt, self.Nu, self.dimer_num, **self.kwargs)
-        self.obj_optabfs = OptABFs(self.input_dict["exx_opt_orb_ecut"], self.stru, self.Nu, self.dr, self.lr, **self.kwargs)
+        self.obj_setdimers = SetDimers(self.input_dict, self.stru, self.kpt, self.Nu, self.dimer_num, **self.kwargs) if not Path("folders").exists() else None
+        self.obj_optabfs = OptABFs(self.input_dict["exx_opt_orb_ecut"], self.stru, self.Nu, self.dr, self.lr, **self.kwargs) if not Path("opt_orb_"+"-".join(list_elem2str(self.Nu))).exists() else None
 
-    def _execute(self, command: Code, external_command: Command, **kwargs):
+    def _execute(self, command: Code, external_command: Command="", **kwargs):
         """Execute calculation
 
         :params command: pyautotest.schedulers.data.Code` object to execute calculation
@@ -461,15 +463,19 @@ class EXX(SCF):
 
         current_path = Path.cwd()
         # set dimer
-        dimer_line = Code(code_name=command.code_name, 
+        if not Path("folders").exists():
+            dimer_line = Code(code_name=command.code_name, 
                         cmdline_params=['-np 1'], 
                         stdout_name=command.stdout_name,
                         stderr_name=command.stderr_name,
                         withmpi=command.withmpi).run_line()
-        self.obj_setdimers.calculate(dimer_line, **kwargs)
+            self.obj_setdimers.calculate(dimer_line, **kwargs)
 
         # optimize ABFs
-        self.obj_optabfs.calculate(external_command, **kwargs)
+        if not Path("opt_orb_"+"-".join(list_elem2str(self.Nu))).exists():
+            if isinstance(external_command, Code):
+                external_command = external_command.run_line()
+            self.obj_optabfs.calculate(external_command, **kwargs)
         
         # Exx calculation
         os.chdir("exx_"+"-".join(list_elem2str(self.Nu)))

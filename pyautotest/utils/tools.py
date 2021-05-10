@@ -131,3 +131,25 @@ def list_elem2str(a: Union[List[float], List[int]]) -> List[str]:
 
 def folder_name(T1: str, T2: str, i_dis: Union[int, float, str]) -> str:
     return f"{T1}-{T2}_{i_dis}"
+
+def get_input_line(input_dict:dict):
+    """Return input lines in INPUT file
+        
+    :params input_dict: dict of input parameters
+    """
+
+    lines = []
+    lines.append("INPUT_PARAMETERS")
+    for key, value in input_dict.items():
+        if value:
+            lines.append(f"{key.ljust(30)}{value}")
+    return '\n'.join(lines)
+
+def write_input(input_dict:dict, filename:str_PathLike="INPUT"):
+    """Write INPUT file based on input_dict
+        
+    :params input_dict: dict of input parameters
+    """
+
+    with open(filename, 'w') as file:
+        file.write(get_input_line(input_dict))

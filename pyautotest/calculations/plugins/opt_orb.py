@@ -6,7 +6,7 @@ Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 '''
 
 from pyautotest.calculations.baseclass import JobCalculation
-from pyautotest.utils.tools import folder_name, list_elem2str, read_json
+from pyautotest.utils.tools import folder_name, list_elem2str, read_json, get_input_line
 from pyautotest.calculations.structure import Stru
 from pyautotest.schedulers.data import Code
 from pyautotest.utils.typings import *
@@ -118,16 +118,6 @@ class SetDimers(JobCalculation):
         for i_dis in distance[self.element]:
             self.folder_list.append(self.create_input(i_dis))
 
-    def _get_input_line(self):
-        """Return input lines in INPUT file"""
-
-        lines = []
-        lines.append("INPUT_PARAMETERS")
-        for key, value in self.input_dict.items():
-            if value:
-                lines.append(f"{key.ljust(30)}{value}")
-        return '\n'.join(lines)
-
     def create_input(self, i_dis: float):
         """Create dimer directory and its input files
 
@@ -142,7 +132,7 @@ class SetDimers(JobCalculation):
             shutil.copy(i, folder)
 
         # INPUT
-        input_lines = self._get_input_line()
+        input_lines = get_input_line(self.input_dict)
         with open(folder/"INPUT", 'w') as file:
             file.write(input_lines)
         with open(folder/"INPUTw", "w") as file:

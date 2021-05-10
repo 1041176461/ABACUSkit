@@ -118,7 +118,7 @@ class ABACUSCalculation(JobCalculation):
         elif self.input_dict["gamma_only"] != 1:
             raise FileNotFoundError("`gamma_only` can only be 1 or 0.")
 
-    def _check(self, index=0, **kwargs) -> typing.Union[int, str]:
+    def _check(self, index:int=0, **kwargs) -> typing.Union[int, str]:
         """Check if job is finished
         
         :params index: calculation index in workflow
@@ -140,25 +140,6 @@ class ABACUSCalculation(JobCalculation):
         lines = []
         lines.append("INPUT_PARAMETERS")
         for key, value in self.input_dict.items():
-            if value:
-                lines.append(f"{key.ljust(30)}{value}")
-        return '\n'.join(lines)
-    
-    def get_input_dict(self):
-        """Return a dictionary of input parameters"""
-
-        return self.input_dict
-    
-    @staticmethod
-    def get_input_line(input_dict):
-        """Return input lines in INPUT file
-        
-        :params input_dict: dict of input parameters
-        """
-
-        lines = []
-        lines.append("INPUT_PARAMETERS")
-        for key, value in input_dict.items():
             if value:
                 lines.append(f"{key.ljust(30)}{value}")
         return '\n'.join(lines)

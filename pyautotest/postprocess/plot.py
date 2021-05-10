@@ -4,9 +4,11 @@ LastEditors: jiyuyang
 LastEditTime: 2021-05-08 11:47:09
 Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 '''
+from pyautotest.utils.typings import *
 
 import numpy as np
 from typing import Sequence
+from multimethod import multimethod
 
 class BandPlot:
     """Plot band structure"""
@@ -55,8 +57,9 @@ class BandPlot:
 
         return np.array(energy)-efermi
 
+    @multimethod
     @classmethod
-    def plot(cls, filename:str, efermi:float, index:dict, energy_range:Sequence=[]):
+    def plot(cls, filename:str_PathLike, efermi:float, index:dict, energy_range:Sequence=[]):
         """Plot band structure
         
         :params filename: string of band date file
@@ -69,4 +72,8 @@ class BandPlot:
         energy = cls.energy_minus_efermi(energy, efermi)
         energy_range = cls._set_range(energy, energy_range)
         
-
+    
+    @multimethod
+    @classmethod
+    def plot(cls, filename:muti_Path, efermi:Sequence, index:dict, energy_range:Sequence=[]):
+        pass
