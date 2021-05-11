@@ -17,8 +17,8 @@ def main():
     # Run
     parser_run = subparsers.add_parser('run', help='way to run auto-test')
     test_group = parser_run.add_argument_group(title='Test Parameters')
-    test_group.add_argument('-s', '--single', dest='single', type=str, default=None, help='local single test for one example, its value should be absolute path of `input.json`')
-    test_group.add_argument('-b', '--batch', dest='batch', type=str, default=None, help='local batch test for many examples, its value should be absolute path of `input.json`')
+    test_group.add_argument('-s', '--single', dest='single', type=str, default=None, help='local single test for one example.')
+    test_group.add_argument('-b', '--batch', dest='batch', type=str, default=None, help='local batch test for many examples.' )
     
     other_group = parser_run.add_argument_group(title='Optional Parameters')
     other_group.add_argument('-l', '--local', dest='local', type=bool, default=False, help='whether to run locally. Default: False')
@@ -27,7 +27,10 @@ def main():
 
     # Show
     parser_show = subparsers.add_parser('show', help='show information of auto-test')
-    parser_show.add_argument('-l', '--lib', dest='lib', type=str, default=None, help='show example library information, its value should be absolute path of `input.json`')
+    parser_show.add_argument('-l', '--lib', dest='lib', type=str, default=None, help='show example library information.')
+    parser_show.add_argument('-b', '--band', dest='band', type=str, default=None, help='plot band structure and show band information.')
+    parser_show.add_argument('-t', '--tdos', dest='tdos', type=str, default=None, help='plot total dos.')
+    parser_show.add_argument('-p', '--pdos', dest='pdos', type=str, default=None, help='plot partial dos.')
     parser_show.set_defaults(func=Show().show_cmdline)
     
     args = parser.parse_args()

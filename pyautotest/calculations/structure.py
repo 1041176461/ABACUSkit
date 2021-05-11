@@ -362,7 +362,7 @@ class Kpt:
     def label_special_k(self):
         """Label special k-points based on `numbers` list"""
 
-        return np.cumsum(np.concatenate([1], self.numbers), axis=0)[:len(self.special_k)]
+        return np.cumsum(np.concatenate(([1], self.numbers), axis=0))[:len(self.special_k)]
 
 def read_kpt(kpt_file: str_PathLike) -> Kpt:
     """Read k-points file

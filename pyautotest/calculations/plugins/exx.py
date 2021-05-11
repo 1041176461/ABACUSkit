@@ -53,7 +53,6 @@ class SetDimers(ABACUSCalculation):
         else: 
             raise FileNotFoundError("Can not find orbital files.")
 
-    @profile(column="time", list=5)
     def _prepare(self, **kwargs):
         """Prepare input files for dimers calculation"""
 
@@ -491,7 +490,7 @@ class EXX(SCF):
         os.system(command.run_line())
         os.chdir(current_path)
 
-    def _check(self, index, **kwargs) -> typing.Union[int, str]:
+    def _check(self, index:int=0, **kwargs) -> typing.Union[int, str]:
         """Check if job is finished"""
 
         current_path = Path.cwd()
