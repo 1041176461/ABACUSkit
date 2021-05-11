@@ -57,7 +57,7 @@ class Show:
         index = zip(klabel, value)
 
         if isinstance(filename, (str, PathLike)):
-            BandPlot.plot(filename, index, efermi, energy_range, blabel, color, outfile)
+            BandPlot.singleplot(filename, index, efermi, energy_range, blabel, color, outfile)
         elif isinstance(filename, (list, tuple)):
             BandPlot.multiplot(filename, index, efermi, energy_range, blabel, color, outfile)
 

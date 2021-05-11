@@ -8,7 +8,7 @@ Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 import cProfile, pstats
 from typing import Union
 
-def profile(column:str="time", list:Union[int, float, str]=1):
+def profile(column:str="time", list:Union[int, float, str]=5):
     def _profile(function):
         def _profile(*args, **kwargs):
             profiler = cProfile.Profile()

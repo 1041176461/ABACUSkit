@@ -73,7 +73,7 @@ class SetDimers(ABACUSCalculation):
             elem = orb_obj.element
             nw_dict[elem] = orb_obj.total
             rcut_dict[elem] = orb_obj.rcut
-        dis = cut_dis(cal_dis(self.stru.supercell_positions(kpoints)), rcut_dict)
+        dis = cut_dis(cal_dis(self.stru.positions_bohr, self.stru.supercell_positions(kpoints)), rcut_dict)
         dis_decimal = round_dis(dis, 1e-6)
         dis_opt = self.get_dis_opt(dis_decimal)
         dis_weight = self.cal_dis_weight(dis_opt, dis)

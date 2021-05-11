@@ -8,7 +8,7 @@ Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 from pyautotest.utils.typings import *
 
 import numpy as np
-from collections import OrderedDict
+from collections import OrderedDict, namedtuple
 from typing import Sequence, Tuple
 from matplotlib import axes
 import matplotlib.pyplot as plt
@@ -93,8 +93,35 @@ class BandPlot:
         ax.legend(by_label.values(), by_label.keys())
 
     @classmethod
-    def plot(cls, filename:str_PathLike, index:dict, efermi:float=0, energy_range:Sequence[float]=[], label:str=None, color:str=None, outfile:str_PathLike='band.png'):
+    def plot(cls, x:Sequence, y:Sequence, index:dict, efermi:float=0, energy_range:Sequence[float]=[], label:str=None, color:str=None, outfile:str_PathLike='band.png'):
         """Plot band structure
+        
+        :params x, y: x-axis and y-axis coordinates
+        :params index: dict of special k-points label and its index in data file
+        :params efermi: Fermi level in unit eV
+        :params energy_range: range of energy to plot, its length equals to two
+        :params label: band label. Default: ''
+        :params color: band color. Default: 'black'
+        :params outfile: band picture file name. Default: 'band.png'
+        """
+
+        fig, ax = plt.subplots()
+
+        if not color:
+            color = 'black'
+
+        kpoints, energy = x, y
+        energy = cls.energy_minus_efermi(energy, efermi)
+        energy_range = cls._set_range(energy, energy_range)
+
+        ax.plot(kpoints, energy, lw=0.8, color=color, label=label)
+        cls._set_figure(ax, index, energy_range)
+
+        plt.savefig(outfile)
+
+    @classmethod
+    def singleplot(cls, filename:str_PathLike, index:dict, efermi:float=0, energy_range:Sequence[float]=[], label:str=None, color:str=None, outfile:str_PathLike='band.png'):
+        """Plot band structure using data file
         
         :params filename: string of band date file
         :params index: dict of special k-points label and its index in data file
@@ -121,7 +148,7 @@ class BandPlot:
         
     @classmethod
     def multiplot(cls, filename:muti_Path, index:dict, efermi:Sequence[float]=[], energy_range:Sequence[float]=[], label:Sequence[str]=None, color:Sequence[str]=None, outfile:str_PathLike='band.png'):
-        """Plot more than two band structures
+        """Plot more than two band structures using data file
         
         :params filename: list of path of band date file 
         :params index: list of special k-points label and its index in data file e.g. [("G", 1), ("L", 10), ...]
@@ -159,3 +186,35 @@ class BandPlot:
         cls._set_figure(ax, index, energy_range)
 
         plt.savefig(outfile)
+
+    @classmethod
+    def bandgap(cls, energy:Sequence, efermi:float):
+        """Calculate band gap
+        
+        :params energy: band energy
+        :params efermi: Fermi level in unit eV
+        """
+
+        energy = cls.energy_minus_efermi(energy, efermi)
+        e_T = energy.T
+        num_gt_Ef = (e_T > 0).sum(axis=1)
+
+        Band = namedtuple('Band', ['band_index', 'band', 'value', 'k_index'])
+
+        # valance band
+        band_vbm_index = np.where(num_gt_Ef == 0)[0]
+        band_vbm = e_T[band_vbm_index]
+        evbm = np.max(band_vbm)
+        k_vbm_index = np.where(band_vbm == evbm)[1]
+        vbm = Band(band_vbm_index, band_vbm, evbm, k_vbm_index)
+
+        # conduct band
+        band_cbm_index = np.where(num_gt_Ef != 0)[0]
+        band_cbm= e_T[band_cbm_index]
+        ecbm = np.min(band_cbm)
+        k_cbm_index = np.where(band_cbm == ecbm)[1]
+        cbm = Band(band_cbm_index, band_cbm, ecbm, k_cbm_index)
+
+        gap = ecbm-evbm
+
+        return gap, vbm, cbm

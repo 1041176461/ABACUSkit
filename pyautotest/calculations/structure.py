@@ -103,6 +103,8 @@ class Stru:
         self.move = move
         self.abfs = abfs
 
+        self.energy = None
+
     @property
     def positions_bohr(self):
         new_positions = deepcopy(self.positions)
@@ -187,6 +189,9 @@ class Stru:
 
         return R
 
+    def set_energy(filename: str_PathLike):
+        """Set energy using ABACUS running file"""
+
 def read_stru(ntype: int, stru_file: str_PathLike) -> Stru:
     """
     Read `STRU` file
@@ -254,17 +259,18 @@ def read_stru(ntype: int, stru_file: str_PathLike) -> Stru:
 
     return Stru(lat0, cell, pps, positions=positions, scaled_positions=scaled_positions, positions_angstrom_lat0=positions_angstrom_lat0, orbitals=orbitals, masses=masses, magmoms=magmoms, move=move, abfs=abfs)
 
-def cal_dis(positions: dict) -> Dict_Tuple_Dict:
+def cal_dis(positions: dict, supercell_positions: dict) -> Dict_Tuple_Dict:
     """Calculate distance between two atoms
     
     :params positions: dict, key is element name and value is list of atomic Cartesian coordinates in unit lat0
+    :params supercell_positions: dict, key is element name and value is supercell atomic positions
     :return dis[T1,T2] = {..., i_dis:num, ...}
     """
 
     dis = dict()
     for T1,T2 in itertools.combinations_with_replacement(positions, 2):
         dis_TT = defaultdict(int)
-        for ia1,ia2 in itertools.product(positions[T1], positions[T2]):
+        for ia1,ia2 in itertools.product(positions[T1], supercell_positions[T2]):
             i_dis = np.linalg.norm(ia1-ia2)
             dis_TT[i_dis] += 1
         dis[T1,T2] = dict(dis_TT)
