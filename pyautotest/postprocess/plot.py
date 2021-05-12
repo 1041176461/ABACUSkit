@@ -5,6 +5,8 @@ LastEditTime: 2021-05-08 11:47:09
 Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 '''
 
+from pyautotest.utils.tools import list_elem2str
+from pyautotest.calculations.structure import read_kpt
 from pyautotest.utils.typings import *
 
 import numpy as np
@@ -20,7 +22,7 @@ class BandPlot:
         """Set figure"""
 
     @classmethod
-    def read(cls, filename:str) -> Tuple[np.ndarray, np.ndarray]:
+    def read(cls, filename:str_PathLike) -> Tuple[np.ndarray, np.ndarray]:
         """Read band date file and return k-points and energy
         
         :params filename: string of band date file
@@ -71,9 +73,13 @@ class BandPlot:
 
         keys = []
         values = []
-        for key, value in index:
-            keys.append(key)
-            values.append(value)
+        for t in index:
+            if isinstance(t, tuple):
+                keys.append(t[0])
+                values.append(t[1])
+            elif isinstance(t, (int, float)):
+                keys.append('')
+                values.append(t)
 
         # x-axis
         ax.set_xticks(values)
@@ -93,11 +99,11 @@ class BandPlot:
         ax.legend(by_label.values(), by_label.keys())
 
     @classmethod
-    def plot(cls, x:Sequence, y:Sequence, index:dict, efermi:float=0, energy_range:Sequence[float]=[], label:str=None, color:str=None, outfile:str_PathLike='band.png'):
+    def plot(cls, x:Sequence, y:Sequence, index:Sequence, efermi:float=0, energy_range:Sequence[float]=[], label:str=None, color:str=None, outfile:str_PathLike='band.png'):
         """Plot band structure
         
         :params x, y: x-axis and y-axis coordinates
-        :params index: dict of special k-points label and its index in data file
+        :params index: special k-points label and its index in data file
         :params efermi: Fermi level in unit eV
         :params energy_range: range of energy to plot, its length equals to two
         :params label: band label. Default: ''
@@ -120,11 +126,11 @@ class BandPlot:
         plt.savefig(outfile)
 
     @classmethod
-    def singleplot(cls, filename:str_PathLike, index:dict, efermi:float=0, energy_range:Sequence[float]=[], label:str=None, color:str=None, outfile:str_PathLike='band.png'):
+    def singleplot(cls, datafile:str_PathLike, kptfile:str=[], efermi:float=0, energy_range:Sequence[float]=[], label:str=None, color:str=None, outfile:str_PathLike='band.png'):
         """Plot band structure using data file
         
-        :params filename: string of band date file
-        :params index: dict of special k-points label and its index in data file
+        :params datafile: string of band date file
+        :params kptfile: k-point file
         :params efermi: Fermi level in unit eV
         :params energy_range: range of energy to plot, its length equals to two
         :params label: band label. Default: ''
@@ -133,44 +139,48 @@ class BandPlot:
         """
 
         fig, ax = plt.subplots()
+        kpt = read_kpt(kptfile)
 
         if not color:
             color = 'black'
 
-        kpoints, energy = cls.read(filename)
+        kpoints, energy = cls.read(datafile)
         energy = cls.energy_minus_efermi(energy, efermi)
         energy_range = cls._set_range(energy, energy_range)
 
         ax.plot(kpoints, energy, lw=0.8, color=color, label=label)
+        cls.info(kpt.kpath, energy)
+        index = kpt.label_special_k
         cls._set_figure(ax, index, energy_range)
 
         plt.savefig(outfile)
         
     @classmethod
-    def multiplot(cls, filename:muti_Path, index:dict, efermi:Sequence[float]=[], energy_range:Sequence[float]=[], label:Sequence[str]=None, color:Sequence[str]=None, outfile:str_PathLike='band.png'):
+    def multiplot(cls, datafile:muti_Path, kptfile:str=[], efermi:Sequence[float]=[], energy_range:Sequence[float]=[], label:Sequence[str]=None, color:Sequence[str]=None, outfile:str_PathLike='band.png'):
         """Plot more than two band structures using data file
         
-        :params filename: list of path of band date file 
-        :params index: list of special k-points label and its index in data file e.g. [("G", 1), ("L", 10), ...]
+        :params datafile: list of path of band date file 
+        :params kptfile: k-point file
         :params efermi: list of Fermi levels in unit eV, its length equals to `filename`
         :params energy_range: range of energy to plot, its length equals to two
         :params label: list of band labels, its length equals to `filename`.
         :params color: list of band colors, its length equals to `filename`.
         :params outfile: band picture file name. Default: 'band.png'
         """
-        
+
         fig, ax = plt.subplots()
+        kpt= read_kpt(kptfile)
 
         if not efermi:
-            efermi = [0.0 for i in range(len(filename))]
+            efermi = [0.0 for i in range(len(datafile))]
         if not label:
-            label = ['' for i in range(len(filename))]
+            label = ['' for i in range(len(datafile))]
         if not color:
-            color = ['black' for i in range(len(filename))]
+            color = ['black' for i in range(len(datafile))]
 
         emin = -np.inf
         emax = np.inf
-        for i, file in enumerate(filename):
+        for i, file in enumerate(datafile):
             kpoints, energy = cls.read(file)
             energy = cls.energy_minus_efermi(energy, efermi[i])
             energy_min = np.min(energy)
@@ -181,21 +191,22 @@ class BandPlot:
                 emax = energy_max
 
             ax.plot(kpoints, energy, lw=0.8, color=color[i], label=label[i])
+            cls.info(kpt.kpath, energy)
         
         energy_range = cls._set_range([emin, emax], energy_range)
+
+        index = kpt.label_special_k
         cls._set_figure(ax, index, energy_range)
 
         plt.savefig(outfile)
 
     @classmethod
-    def bandgap(cls, energy:Sequence, efermi:float):
+    def bandgap(cls, energy:Sequence):
         """Calculate band gap
         
-        :params energy: band energy
-        :params efermi: Fermi level in unit eV
+        :params energy: band energy after subtracting the Fermi level
         """
 
-        energy = cls.energy_minus_efermi(energy, efermi)
         e_T = energy.T
         num_gt_Ef = (e_T > 0).sum(axis=1)
 
@@ -218,3 +229,39 @@ class BandPlot:
         gap = ecbm-evbm
 
         return gap, vbm, cbm
+
+    @classmethod
+    def info(cls, kpath:Sequence, energy:Sequence):
+        """Output the information of band structure
+        
+        :params kpath: k-points path 
+        :params energy: band energy after subtracting the Fermi level
+        """
+
+        def band_type(vbm_x, cbm_x):
+            longone, shortone = (vbm_x, cbm_x) if len(vbm_x) >= len(cbm_x) else (cbm_x, vbm_x)
+            for i in shortone:
+                if i in longone:
+                    btype = "Direct"
+                else:
+                    btype = "Indirect"
+            return btype
+
+        gap, vbm, cbm = cls.bandgap(energy)
+        print("--------------------------Band Structure--------------------------", flush=True)
+        print(f"{'Band character:'.ljust(30)}{band_type(vbm.k_index, cbm.k_index)}", flush=True)
+        print(f"{'Band gap(eV):'.ljust(30)}{gap: .4f}", flush=True)
+        print(f"{'Band index:'.ljust(30)}{'HOMO'.ljust(10)}{'LUMO'}", flush=True)
+        print(f"{''.ljust(30)}{str(vbm.band_index[-1]).ljust(10)}{str(cbm.band_index[0])}", flush=True)
+        print(f"{'Eigenvalue of VBM(eV):'.ljust(30)}{vbm.value: .4f}", flush=True)
+        print(f"{'Eigenvalue of CBM(eV):'.ljust(30)}{cbm.value: .4f}", flush=True)
+        vbm_k = np.unique(kpath[vbm.k_index], axis=0)
+        cbm_k = np.unique(kpath[cbm.k_index], axis=0)
+        print(f"{'Location of VBM'.ljust(30)}{' '.join(list_elem2str(vbm_k[0]))}", flush=True)
+        for i, j in enumerate(vbm_k):
+            if i != 0:
+                print(f"{''.ljust(30)}{' '.join(list_elem2str(j))}", flush=True)
+        print(f"{'Location of CBM'.ljust(30)}{' '.join(list_elem2str(cbm_k[0]))}", flush=True)
+        for i, j in enumerate(cbm_k):
+            if i != 0:
+                print(f"{''.ljust(30)}{' '.join(list_elem2str(j))}", flush=True)

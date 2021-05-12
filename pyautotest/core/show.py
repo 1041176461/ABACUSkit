@@ -23,9 +23,9 @@ class Show:
         :params src: path of library
         """
 
-        print("--------------------------Library Information--------------------------")
-        print(f"Path: {src}")
-        print("Directory Structure:")
+        print("--------------------------Library Information--------------------------", flush=True)
+        print(f"Path: {src}", flush=True)
+        print("Directory Structure:", flush=True)
         for index, subsrc in enumerate(os.listdir(src)):
             if os.path.isdir(os.path.join(src, subsrc)) and subsrc != "OUT.test":
                 line = f" ({index+1}) " + subsrc
@@ -40,12 +40,11 @@ class Show:
                 raise FileNotFoundError(f"No information to show!")
 
     @classmethod
-    def show_bandinfo(cls, filename:Union[str_PathLike, muti_Path], kptfile:str, klabel:Sequence[str], efermi:Union[float, Sequence[float]]=None, energy_range:Sequence[float]=[], blabel:Union[str, Sequence[str]]=None, color:Union[str, Sequence[str]]=None, outfile:str_PathLike="band.png"):
+    def show_bandinfo(cls, datafile:Union[str_PathLike, muti_Path], kptfile:str_PathLike, efermi:Union[float, Sequence[float]]=None, energy_range:Sequence[float]=[], blabel:Union[str, Sequence[str]]=None, color:Union[str, Sequence[str]]=None, outfile:str_PathLike="band.png"):
         """Show band structure information
         
-        :params filename: path of band date file 
+        :params datafile: path of band date file 
         :params kptfile: path of k-points file
-        :params klabel: special k-points label
         :params efermi: Fermi levels in unit eV, its length equals to `filename`
         :params energy_range: range of energy to plot, its length equals to two
         :params blabel: band labels, its length equals to `filename`.
@@ -53,13 +52,10 @@ class Show:
         :params outfile: band picture file name. Default: 'band.png'
         """
 
-        value = read_kpt(kptfile).label_special_k
-        index = zip(klabel, value)
-
-        if isinstance(filename, (str, PathLike)):
-            BandPlot.singleplot(filename, index, efermi, energy_range, blabel, color, outfile)
-        elif isinstance(filename, (list, tuple)):
-            BandPlot.multiplot(filename, index, efermi, energy_range, blabel, color, outfile)
+        if isinstance(datafile, (str, PathLike)):
+            BandPlot.singleplot(datafile, kptfile, efermi, energy_range, blabel, color, outfile)
+        elif isinstance(datafile, (list, tuple)):
+            BandPlot.multiplot(datafile, kptfile, efermi, energy_range, blabel, color, outfile)
 
     @classmethod
     def show_cmdline(cls, args):
@@ -71,10 +67,9 @@ class Show:
             text = read_json(args.band)
             filename = text["filename"]
             kptfile = text["kptfile"]
-            klabel = text["klabel"]
             efermi = text.pop("efermi", 0.0)
             energy_range = text.pop("energy_range", []) 
             blabel = text.pop("blabel", None) 
             color = text.pop("color", None) 
             outfile = text.pop("outfile", "band.png")
-            cls.show_bandinfo(filename, kptfile, klabel, efermi, energy_range, blabel, color, outfile)
+            cls.show_bandinfo(filename, kptfile, efermi, energy_range, blabel, color, outfile)

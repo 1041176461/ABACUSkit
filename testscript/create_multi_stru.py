@@ -1,5 +1,4 @@
 from pyautotest.calculations import structure
-from copy import deepcopy
 from pathlib import Path
 import shutil
 import os

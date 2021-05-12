@@ -209,12 +209,12 @@ class Stru:
         def read(f):
             for line in f:
                 if re.search(name, line):
-                    energy = float(line.split(2))
+                    energy = float(line.split()[2])
             return energy
 
         if isinstance(file, TextIOWrapper):
             energy = read(file)
-        elif isinstance(file, [str, PathLike]):
+        elif isinstance(file, (str, PathLike)):
             with open(file, 'r') as f:
                 energy = read(f)
         
@@ -364,7 +364,7 @@ def delete_zero(dis: Dict_Tuple_Dict) -> Dict_Tuple_Dict:
 class Kpt:
     """K-points information"""
 
-    def __init__(self, mode: str, numbers:list=[], special_k: list=[], offset: list=[0.0, 0.0, 0.0]) -> None:
+    def __init__(self, mode: str, numbers:list=[], special_k: list=[], offset: list=[0.0, 0.0, 0.0], klabel: list=[]) -> None:
         """Initialize Kpt object
         
         :params mode: ‘Gamma’, ‘MP’ or 'Line'
@@ -377,6 +377,7 @@ class Kpt:
         self.numbers = numbers
         self.special_k = special_k
         self.offset = offset
+        self.klabel = klabel
 
     def get_kpt(self) -> str:
         """Return the `KPT` file as a string"""
@@ -395,7 +396,7 @@ class Kpt:
 
         return '\n'.join(line)
 
-    def write_kpt(self, filename: str) -> None:
+    def write_kpt(self, filename: str):
         """Write k-points file
         
         :params filename: absolute path of k-points file
@@ -405,10 +406,38 @@ class Kpt:
             file.write(self.get_kpt())
 
     @property
+    def kpath(self):
+        """Uniform k-point path"""
+
+        total_k = np.sum(self.numbers)
+        spec_k_coor = np.array(self.special_k)
+        interval = (np.roll(spec_k_coor, -1, axis=0) - spec_k_coor)/np.reshape(self.numbers, (-1, 1))
+        max_num = np.max(self.numbers)
+        len_num = len(self.numbers)
+        k_coor_span = np.zeros((len_num, max_num), dtype=np.float)
+        X, Y, Z = np.split(spec_k_coor, 3, axis=1)
+        i_X, i_Y, i_Z = np.split(interval, 3, axis=1)
+        for i, j in enumerate(self.numbers):
+            k_coor_span[i][:j] = np.arange(j)
+        X = (i_X * k_coor_span + X.repeat(max_num, axis=1)).flatten()
+        Y = (i_Y * k_coor_span + Y.repeat(max_num, axis=1)).flatten()
+        Z = (i_Z * k_coor_span + Z.repeat(max_num, axis=1)).flatten()
+        k_direct_coor = np.empty((3, total_k), dtype=np.float)
+        k_direct_coor[0] = X[:total_k]
+        k_direct_coor[1] = Y[:total_k]
+        k_direct_coor[2] = Z[:total_k]
+
+        return k_direct_coor.T
+
+    @property
     def label_special_k(self):
         """Label special k-points based on `numbers` list"""
 
-        return np.cumsum(np.concatenate(([1], self.numbers), axis=0))[:len(self.special_k)]
+        index = np.cumsum(np.concatenate(([1], self.numbers), axis=0))[:len(self.special_k)]
+        if self.klabel:
+            return zip(self.klabel, index)
+        else:
+            return index
 
 def read_kpt(kpt_file: str_PathLike) -> Kpt:
     """Read k-points file
@@ -428,11 +457,18 @@ def read_kpt(kpt_file: str_PathLike) -> Kpt:
         elif mode == "Line":
             special_k = []
             numbers = []
+            klabel = []
             for k in range(number):
-                line = skip_notes(file.readline()).split()
-                special_k.append(list(map(float, line[:3])))
-                numbers.append(int(line[3]))
-            return Kpt(mode, numbers, special_k, offset=[])
+                line = file.readline()
+                if re.match("#", line):
+                    continue
+                else:
+                    linesplit = line.split(maxsplit=4)
+                special_k.append(list(map(float, linesplit[:3])))
+                numbers.append(int(linesplit[3]))
+                if len(linesplit) == 5:
+                    klabel.append(linesplit[4].strip('#\n '))
+            return Kpt(mode, numbers, special_k, offset=[], klabel=klabel)
 
 # Orb
 class Orb:
