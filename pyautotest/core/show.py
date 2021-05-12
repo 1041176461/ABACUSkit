@@ -29,12 +29,12 @@ class Show:
         for index, subsrc in enumerate(os.listdir(src)):
             if os.path.isdir(os.path.join(src, subsrc)) and subsrc != "OUT.test":
                 line = f" ({index+1}) " + subsrc
-                print(f"{line}")
+                print(f"{line}", flush=True)
                 subline = '\t' + ', '.join(os.listdir(os.path.join(src, subsrc)))
-                print(subline)
+                print(subline, flush=True)
             elif os.path.isfile(os.path.join(src, subsrc)):
                 subline = '\t' + ', '.join(os.listdir(src))
-                print(subline)
+                print(subline, flush=True)
                 break
             else:
                 raise FileNotFoundError(f"No information to show!")
