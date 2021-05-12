@@ -5,14 +5,18 @@ LastEditTime: 2021-04-29 16:18:17
 Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 '''
 
+from pyautotest.utils.constants import BOHR_TO_A
 from pyautotest.utils.tools import skip_notes, search_sentence, list_elem2str
 from pyautotest.utils.typings import *
 
+import re
 import numpy as np
 import functools
 import operator
 import itertools
 import decimal
+import typing
+from io import TextIOWrapper
 from copy import deepcopy
 from collections import defaultdict
 
@@ -38,7 +42,7 @@ def Cartesian_angstrom2Cartesian(positions: Dict_str_list) -> Dict_str_list:
 
     new_positions = deepcopy(positions)
     for pos in new_positions:
-        new_positions[pos] = np.array(new_positions[pos])/0.529166
+        new_positions[pos] = np.array(new_positions[pos])/BOHR_TO_A
 
     return new_positions
 
@@ -104,6 +108,7 @@ class Stru:
         self.abfs = abfs
 
         self.energy = None
+        self.efermi = None
 
     @property
     def positions_bohr(self):
@@ -189,8 +194,43 @@ class Stru:
 
         return R
 
-    def set_energy(filename: str_PathLike):
-        """Set energy using ABACUS running file"""
+    @property
+    def volume_bohr(self):
+        return np.linalg.det(self.cell)*pow(self.lat0, 3)
+
+    @property
+    def volume(self):
+        return self.volume_bohr*pow(BOHR_TO_A, 3)
+
+    @classmethod
+    def read_energy_from_file(cls, file: typing.Union[TextIOWrapper, str_PathLike], name:str):
+        """Read energy from ABACUS running log file"""
+
+        def read(f):
+            for line in f:
+                if re.search(name, line):
+                    energy = float(line.split(2))
+            return energy
+
+        if isinstance(file, TextIOWrapper):
+            energy = read(file)
+        elif isinstance(file, [str, PathLike]):
+            with open(file, 'r') as f:
+                energy = read(f)
+        
+        return energy
+
+    def set_energy(self, file: typing.Union[TextIOWrapper, str_PathLike]):
+        """Set energy"""
+
+        self.energy = self.read_energy_from_file(file, "E_KohnSham")
+
+    def set_efermi(self, file: TextIOWrapper):
+        """Set fermi level"""
+
+        self.efermi =  self.read_energy_from_file(file, "E_Fermi")
+
+    #TODO: add set_force, set_stress
 
 def read_stru(ntype: int, stru_file: str_PathLike) -> Stru:
     """

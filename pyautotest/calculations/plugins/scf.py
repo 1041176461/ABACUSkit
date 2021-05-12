@@ -31,14 +31,14 @@ class SCF(ABACUSCalculation):
         """parse output of scf calculation"""
         
         res = {}
+        self.stru.set_energy(self.logfile)
+        res["etot"] = self.stru.energy
         with open(self.logfile, 'r') as file:
             for line in file:
-                if re.search("!FINAL_ETOT_IS", line):
-                    res["etot"] = float(re.search("[-+][0-9]+.[0-9]+", line).group())
-                    if re.search("The Ionic Phase", line):
-                        res["ionic phase"] = float(line.split()[3])
-                    if re.search("Electronic Phase", line):
-                        res["electronic phase"] = float(line.split()[2])
+                if re.search("The Ionic Phase", line):
+                    res["ionic phase"] = float(line.split()[3])
+                if re.search("Electronic Phase", line):
+                    res["electronic phase"] = float(line.split()[2])
         
         return res
 
