@@ -7,11 +7,9 @@ Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 
 from pyautotest.utils.tools import read_json
 from pyautotest.utils.typings import *
-from pyautotest.postprocess.plot import BandPlot
-from pyautotest.calculations.structure import read_kpt
 
 import os
-from typing import Sequence, Union
+from typing import Sequence, Union, Dict, List
 
 class Show:
     """Show auto-test information"""
@@ -52,10 +50,28 @@ class Show:
         :params outfile: band picture file name. Default: 'band.png'
         """
 
+        from pyautotest.postprocess.plot import BandPlot
+
         if isinstance(datafile, (str, PathLike)):
             BandPlot.singleplot(datafile, kptfile, efermi, energy_range, blabel, color, outfile)
         elif isinstance(datafile, (list, tuple)):
             BandPlot.multiplot(datafile, kptfile, efermi, energy_range, blabel, color, outfile)
+
+    @classmethod
+    def show_dosinfo(cls, tdosfile:str_PathLike='', pdosfile:str_PathLike='', efermi:float=0, energy_range:Sequence[float]=[], dos_range:Sequence[float]=[], species:Union[Sequence[str], Dict[str, List[int]]]=[], tdosfig:str_PathLike='tdos.png', pdosfig:str_PathLike='pdos.png'):
+        """Plot total dos or partial dos, if both `tdosfile` and `pdosfile` set, it will ony read `tdosfile`
+        
+        :params tdosfile: string of TDOS data file
+        :params pdosfile: string of PDOS data file
+        :params efermi: Fermi level in unit eV
+        :params energy_range: range of energy to plot, its length equals to two
+        :params dos_range: range of dos to plot, its length equals to two
+        :params species: list of atomic species or dict of atomic species and its angular momentum list
+        """
+
+        from pyautotest.postprocess.plot import DosPlot
+
+        DosPlot().plot(tdosfile, pdosfile, efermi, energy_range, dos_range, species, tdosfig, pdosfig)
 
     @classmethod
     def show_cmdline(cls, args):
@@ -73,3 +89,15 @@ class Show:
             color = text.pop("color", None) 
             outfile = text.pop("outfile", "band.png")
             cls.show_bandinfo(filename, kptfile, efermi, energy_range, blabel, color, outfile)
+
+        if args.dos:
+            text = read_json(args.dos)
+            tdosfile = text.pop("tdosfile", '')
+            pdosfile = text.pop("pdosfile", '')
+            efermi = text.pop("efermi", 0.0)
+            energy_range = text.pop("energy_range", []) 
+            dos_range = text.pop("dos_range", [])
+            species = text.pop("species", [])
+            tdosfig = text.pop("tdosfig", "tdos.png")
+            pdosfig = text.pop("pdosfig", "pdos.png")
+            cls.show_dosinfo(tdosfile, pdosfile, efermi, energy_range, dos_range, species, tdosfig, pdosfig)

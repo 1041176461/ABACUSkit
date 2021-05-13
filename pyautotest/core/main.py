@@ -29,8 +29,7 @@ def main():
     parser_show = subparsers.add_parser('show', help='show information of auto-test')
     parser_show.add_argument('-l', '--lib', dest='lib', type=str, default=None, help='show example library information.')
     parser_show.add_argument('-b', '--band', dest='band', type=str, default=None, help='plot band structure and show band information.')
-    parser_show.add_argument('-t', '--tdos', dest='tdos', type=str, default=None, help='plot total dos.')
-    parser_show.add_argument('-p', '--pdos', dest='pdos', type=str, default=None, help='plot partial dos.')
+    parser_show.add_argument('-d', '--dos', dest='dos', type=str, default=None, help='plot density of state(DOS).')
     parser_show.set_defaults(func=Show().show_cmdline)
     
     args = parser.parse_args()
