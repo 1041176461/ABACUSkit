@@ -5,13 +5,14 @@
  * @Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 -->
 # ABACUS自动测试
-pyautotest是一个以工作流方式进行ABACUS自动测试的程序。
+pyautotest是一个以工作流方式进行ABACUS自动测试的程序，并且可对ABACUS计算结果进行后处理。
 
 ## 特点
 - **工作流**：自动完成输入文件的生成，计算任务的提交以及输出文件的分析等一系列工作，支持串行完成多个计算
 - **批量计算**：支持批量提交多个计算任务
 - **外部代码接口**：支持外部Python脚本处理，如轨道生成，基于off-site辅助基的杂化泛函计算
-- **调度器接口**：程序拥有多种调度器接口，包括：SLURM, PBS Pro, torque, SGE和LSF等；
+- **调度器接口**：程序拥有多种调度器接口，包括：SLURM, PBS Pro, torque, SGE和LSF等
+- **后处理**：基于ABACUS输出的数据文件画能带和DOS（PDOS）图
 
 ## 安装
 ```shell
