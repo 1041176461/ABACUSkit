@@ -16,6 +16,7 @@ import operator
 import itertools
 import decimal
 import typing
+from functools import lru_cache
 from io import TextIOWrapper
 from copy import deepcopy
 from collections import defaultdict
@@ -203,6 +204,7 @@ class Stru:
         return self.volume_bohr*pow(BOHR_TO_A, 3)
 
     @classmethod
+    @lru_cache(maxsize=None, typed=True)
     def read_energy_from_file(cls, file: typing.Union[TextIOWrapper, str_PathLike], name:str):
         """Read energy from ABACUS running log file"""
 
@@ -232,6 +234,7 @@ class Stru:
 
     #TODO: add set_force, set_stress
 
+@lru_cache(maxsize=None, typed=False)
 def read_stru(ntype: int, stru_file: str_PathLike) -> Stru:
     """
     Read `STRU` file
@@ -439,6 +442,7 @@ class Kpt:
         else:
             return index
 
+@lru_cache(maxsize=None, typed=False)
 def read_kpt(kpt_file: str_PathLike) -> Kpt:
     """Read k-points file
     
@@ -496,6 +500,7 @@ class Orb:
         return functools.reduce(operator.add, ((2*l+1)*n for l,n in enumerate(self.Nu)))
 #TODO: add a function to plot orbital
 
+@lru_cache(maxsize=None, typed=False)
 def read_orb(orbital: str_PathLike) -> Orb:
     """Read orbital file
     

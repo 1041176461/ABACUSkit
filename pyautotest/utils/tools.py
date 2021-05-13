@@ -10,9 +10,11 @@ from pyautotest.utils.typings import *
 import re
 import sys
 import json
+from functools import lru_cache
 from collections import defaultdict
 from typing import Tuple, List, Union
 
+@lru_cache(maxsize=None, typed=False)
 def read_json(filename: str_PathLike) -> dict:
     """ Read json file and return dict
     
@@ -37,6 +39,7 @@ def write_json(filename: str_PathLike, new_filename: str_PathLike, **kwargs) -> 
         json.dump(text, file, indent=4)
     return new_filename
 
+@lru_cache(maxsize=None, typed=False)
 def read_cif(filename: str_PathLike) -> Tuple[tuple, dict]:
     """Read cif file, return lattice and position
     

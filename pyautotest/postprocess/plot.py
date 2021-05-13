@@ -5,6 +5,7 @@ LastEditTime: 2021-05-08 11:47:09
 Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 '''
 
+from pyautotest.utils.constants import get_angular_momentum_label
 from pyautotest.utils.tools import list_elem2str
 from pyautotest.calculations.structure import read_kpt
 from pyautotest.utils.typings import *
@@ -12,28 +13,10 @@ from pyautotest.utils.typings import *
 import re
 import numpy as np
 from collections import OrderedDict, namedtuple
-from typing import Sequence, Tuple
+from typing import Dict, Sequence, Tuple, Union, List
 from matplotlib import axes
 import matplotlib.pyplot as plt
-
-def set_range(energy:Sequence, energy_range:Sequence=[]) -> tuple:
-    """Set energy range
-        
-    :params energy: band energy list
-    :params energy_range: range of energy to plot
-    """
-
-    length = len(energy_range)
-    if length == 0:
-        energy_range = (np.min(energy), np.max(energy))
-    elif length == 1:
-        energy_range = (np.min(energy), energy_range[0])
-    elif length == 2:
-        energy_range = (energy_range)
-    else:
-        raise ValueError("Length of `energy_range` must be less than or equal to 2.")
-
-    return energy_range
+from functools import lru_cache
 
 def energy_minus_efermi(energy:Sequence , efermi:float) -> np.ndarray:
     """Return energy after subtracting the Fermi level
@@ -48,6 +31,7 @@ class BandPlot:
     """Plot band structure"""
 
     @classmethod
+    @lru_cache(maxsize=None, typed=False)
     def read(cls, filename:str_PathLike) -> Tuple[np.ndarray, np.ndarray]:
         """Read band data file and return k-points and energy
         
@@ -85,7 +69,8 @@ class BandPlot:
         ax.set_xlabel("Wave Vector")
 
         # y-axis
-        ax.set_ylim(range[0], range[1])
+        if range:
+            ax.set_ylim(range[0], range[1])
         ax.set_ylabel(r"$E-E_{fermi}(eV)$")
 
         # others
@@ -115,7 +100,6 @@ class BandPlot:
 
         kpoints, energy = x, y
         energy = energy_minus_efermi(energy, efermi)
-        energy_range = set_range(energy, energy_range)
 
         ax.plot(kpoints, energy, lw=0.8, color=color, label=label)
         cls._set_figure(ax, index, energy_range)
@@ -143,7 +127,6 @@ class BandPlot:
 
         kpoints, energy = cls.read(datafile)
         energy = energy_minus_efermi(energy, efermi)
-        energy_range = set_range(energy, energy_range)
 
         ax.plot(kpoints, energy, lw=0.8, color=color, label=label)
         cls.info(kpt.kpath, energy)
@@ -190,8 +173,6 @@ class BandPlot:
             ax.plot(kpoints, energy, lw=0.8, color=color[i], label=label[i])
             cls.info(kpt.kpath, energy)
         
-        energy_range = set_range([emin, emax], energy_range)
-
         index = kpt.label_special_k
         cls._set_figure(ax, index, energy_range)
 
@@ -273,6 +254,7 @@ class DosPlot:
         return string
 
     @classmethod
+    @lru_cache(maxsize=None, typed=False)
     def read(cls, tdosfile:str_PathLike='', pdosfile:str_PathLike='') -> tuple:
         """Read DOS data file, if both `tdosfile` and `pdosfile` set, it will ony read `tdosfile`
         
@@ -344,7 +326,7 @@ class DosPlot:
             return np.reshape(e_list, newshape=(-1, 1)), orbitals
 
     @classmethod
-    def _set_figure(cls, ax:axes.Axes, dos_range:Sequence, energy_range:Sequence):
+    def _set_figure(cls, ax:axes.Axes, energy_range:Sequence, dos_range:Sequence):
         """set figure and axes for plotting
         
         :params ax: matplotlib.axes.Axes object
@@ -352,20 +334,22 @@ class DosPlot:
         :params energy_range: range of energy
         """
 
-        # x-axis
-        ax.set_xlim(dos_range[0], dos_range[1])
-        ax.set_xlabel("DOS")
-
         # y-axis
-        ax.set_ylim(energy_range[0], energy_range[1])
-        ax.set_ylabel(r"$E-E_{fermi}(eV)$")
+        if dos_range:
+            ax.set_ylim(dos_range[0], dos_range[1])
+        ax.set_ylabel("DOS")
+
+        # x-axis
+        if energy_range:
+            ax.set_xlim(energy_range[0], energy_range[1])
+        ax.set_xlabel(r"$E-E_{fermi}(eV)$")
 
         # others
-        ax.axhline(0, linestyle="--", c='b', lw=1.0)
+        ax.axvline(0, linestyle="--", c='b', lw=1.0)
         ax.legend()
     
     @classmethod
-    def _plot(cls, res:tuple, efermi:float=0, energy_range:Sequence[float]=[]):
+    def _tplot(cls, res:tuple, efermi:float=0, energy_range:Sequence[float]=[], dos_range:Sequence[float]=[]):
 
         fig, ax = plt.subplots()
 
@@ -373,34 +357,19 @@ class DosPlot:
         if nsplit == 2:
             energy, dos = res
             energy = energy_minus_efermi(energy, efermi)
-            dos_range = (np.min(dos), np.max(dos))
-            energy_range = set_range(energy, energy_range)
-            ax.plot(dos, energy, lw=0.8, c='gray', linestyle='-', label='TDOS')
+            ax.plot(energy, dos, lw=0.8, c='gray', linestyle='-', label='TDOS')
                 
         elif nsplit == 3:
             energy, dos_up, dos_dw = res
             energy = energy_minus_efermi(energy, efermi)
             dos_dw = -dos_dw
-            dos_range = (np.min(dos_dw), np.max(dos_up))
-            energy_range = set_range(energy, energy_range)
-            ax.plot(dos_up, energy, lw=0.8, c='gray', linestyle='-', label=r'$TDOS \uparrow$')
-            ax.plot(dos_dw, energy, lw=0.8, c='gray', linestyle='--', label=r'$TDOS \downarrow$')
-        
-        cls._set_figure(ax, dos_range, energy_range)
+            ax.plot(energy, dos_up, lw=0.8, c='gray', linestyle='-', label=r'$TDOS \uparrow$')
+            ax.plot(energy, dos_up, lw=0.8, c='gray', linestyle='--', label=r'$TDOS \downarrow$')
 
-        return ax
+        return ax, energy_range, dos_range
 
     @classmethod
-    def _where_sum(cls, orbitals, key, value):
-        nsplit = orbitals[0]["data"].shape[1]
-        res = np.zeros_like(orbitals[0]["data"], dtype=np.float32)
-        for orb in orbitals:
-            if orb[key] == value:
-                res = res + orb['data']
-        return res, nsplit
-
-    @classmethod
-    def _all_sum(cls, orbitals):
+    def _all_sum(cls, orbitals:dict) -> Tuple[np.ndarray, int]:
         nsplit = orbitals[0]["data"].shape[1]
         res = np.zeros_like(orbitals[0]["data"], dtype=np.float32)
         for orb in orbitals:
@@ -408,46 +377,78 @@ class DosPlot:
         return res, nsplit
 
     @classmethod
-    def plot(cls, tdosfile:str_PathLike='', pdosfile:str_PathLike='', efermi:float=0, energy_range:Sequence[float]=[], choose:dict={}, outfile:str_PathLike='dos.png'):
+    def plot(cls, tdosfile:str_PathLike='', pdosfile:str_PathLike='', efermi:float=0, energy_range:Sequence[float]=[], dos_range:Sequence[float]=[], species:Union[Sequence[str], Dict[str, List[int]]]=[], tdosfig:str_PathLike='tdos.png', pdosfig:str_PathLike='pdos.png'):
         """Plot total dos or partial dos, if both `tdosfile` and `pdosfile` set, it will ony read `tdosfile`
         
         :params tdosfile: string of TDOS data file
         :params pdosfile: string of PDOS data file
         :params efermi: Fermi level in unit eV
         :params energy_range: range of energy to plot, its length equals to two
-        :params choose: specify label for plotting PDOS. Supported keys: 'atom_index', 'species', 'l', 'm', 'z'
+        :params dos_range: range of dos to plot, its length equals to two
+        :params species: list of atomic species or dict of atomic species and its angular momentum list
         """
 
         res = cls.read(tdosfile, pdosfile)
 
         if tdosfile:
-            cls._plot(res, efermi, energy_range)
-        elif pdosfile:
+            ax, energy_range, dos_range = cls._tplot(res, efermi, energy_range, dos_range)
+            cls._set_figure(ax, energy_range, dos_range)
+            plt.savefig(tdosfig)
+
+        elif pdosfile and species:
+            elements = []
+            momentum = []
+            if isinstance(species, (list, tuple)):
+                elements = species
+            elif isinstance(species, dict):
+                elements = list(species.keys())
+                momentum = list(species.values())
+            if not elements:
+                raise TypeError("Only when `pdosfile` and `species` are both set, it will plot PDOS.")
             energy, orbitals = res
+            energy_f = energy_minus_efermi(energy, efermi)
+
             # TDOS
             dos, nsplit = cls._all_sum(orbitals)
             if nsplit == 1:
-                ax = cls._plot((energy, dos), efermi, energy_range)
+                ax, energy_range, dos_range = cls._tplot((energy, dos), efermi, energy_range, dos_range)
             elif nsplit == 2:
                 dos_up, dos_dw = np.split(dos, nsplit, axis=1)
-                ax = cls._plot((energy, dos_up, dos_dw), efermi, energy_range)
-            # PDOS
-        #    if choose:
-        #        xmax, xmin = [], []
-        #        energy = energy_minus_efermi(energy, efermi)
-        #        for key, value in choose.items():
-        #            for val in value:
-        #                dos, nsplit = cls._where_sum(orbitals, key, val)
-        #                if nsplit == 1:
-        #                    ax.plot(dos, energy, lw=0.8, linestyle='-', label=f'{val}')
-        #                elif nsplit == 2:
-        #                    dos_up, dos_dw = np.split(dos, nsplit, axis=1)
-        #                    ax.plot(dos_up, energy, lw=0.8, linestyle="-", label=f"{val}"+r"$\uparrow$")
-        #                    ax.plot(dos_dw, energy, lw=0.8, linestyle="--", label=f"{val}"+r"$\downarrow$")
-        #            xmax.append(np.max(dos))
-        #            xmin.append(np.min(dos))
-        #        dos_range = (np.min(xmin), np.max(xmax))
-        #        energy_range = set_range(energy, energy_range)
-        #        cls._set_figure(ax, dos_range, energy_range)
+                ax, energy_range, dos_range = cls._tplot((energy, dos_up, dos_dw), efermi, energy_range, dos_range)
+            for elem in elements:
+                dos = np.zeros_like(orbitals[0]["data"], dtype=np.float32)
+                for orb in orbitals:
+                    if orb["species"] == elem:
+                        dos += orb["data"]
+                if nsplit == 1:
+                    ax.plot(energy_f, dos, lw=0.8, linestyle='-', label=f'{elem}')
+                elif nsplit == 2:
+                    dos_up, dos_dw = np.split(dos, nsplit, axis=1)
+                    ax.plot(energy_f, dos_up, lw=0.8, linestyle="-", label=f"{elem}"+r"$\uparrow$")
+                    dos_dw = -dos_dw
+                    ax.plot(energy_f, dos_dw, lw=0.8, linestyle="--", label=f"{elem}"+r"$\downarrow$")
+            
+            cls._set_figure(ax, energy_range, dos_range)
+            plt.savefig(tdosfig)
+            
+            # PDOS            
+            if momentum:
+                fig, ax = plt.subplots(len(elements), 1, sharex=True, sharey=True)
+                plt.subplots_adjust(hspace=0)
+                for i, elem in enumerate(elements):
+                    for j in momentum[i]:
+                        dos = np.zeros_like(orbitals[0]["data"], dtype=np.float32)
+                        for orb in orbitals:
+                            if orb["species"] == elem and orb["l"] == j:
+                                dos += orb["data"]
+                        if nsplit == 1:
+                            ax[i].plot(energy_f, dos, lw=0.8, linestyle='-', label=f'{elem}-{get_angular_momentum_label(j)}')
+                        elif nsplit == 2:
+                            dos_up, dos_dw = np.split(dos, nsplit, axis=1)
+                            ax[i].plot(energy_f, dos_up, lw=0.8, linestyle="-", label=f"{elem}-{get_angular_momentum_label(j)}"+r"$\uparrow$")
+                            dos_dw = -dos_dw
+                            ax[i].plot(energy_f, dos_dw, lw=0.8, linestyle="--", label=f"{elem}-{get_angular_momentum_label(j)}"+r"$\downarrow$")
 
-        plt.savefig(outfile)
+                    cls._set_figure(ax[i], energy_range, dos_range)
+
+                plt.savefig(pdosfig)
