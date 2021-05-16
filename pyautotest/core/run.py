@@ -7,7 +7,7 @@ Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 
 from pyautotest.core.autotest import Autotest, configure
 from pyautotest.utils.script import submit_script
-from pyautotest.utils.tools import read_json, write_json
+from pyautotest.utils.IO import read_json, write_json
 from pyautotest.utils.typings import *
 
 import os

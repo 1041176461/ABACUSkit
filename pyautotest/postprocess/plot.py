@@ -7,7 +7,7 @@ Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 
 from pyautotest.utils.constants import get_angular_momentum_label
 from pyautotest.utils.tools import list_elem2str
-from pyautotest.calculations.structure import read_kpt
+from pyautotest.utils.IO import read_kpt
 from pyautotest.utils.typings import *
 
 import re

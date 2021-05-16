@@ -6,7 +6,7 @@ Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 '''
 
 from pyautotest.utils.constants import BOHR_TO_A
-from pyautotest.utils.tools import skip_notes, search_sentence, list_elem2str
+from pyautotest.utils.tools import list_elem2str
 from pyautotest.utils.typings import *
 
 import re
@@ -50,10 +50,10 @@ def Cartesian_angstrom2Cartesian(positions: Dict_str_list) -> Dict_str_list:
 class Stru:
     """ABACUS `STRU` file information"""
 
-    def __init__(self, lat0: int, cell: list, pps: Dict_str_str, positions: Dict_str_list={}, scaled_positions: Dict_str_list={}, positions_angstrom_lat0: Dict_str_list={}, orbitals: Dict_str_str={}, masses: Dict_str_float={}, magmoms: Dict_str_float={}, move: Dict_str_int={}, abfs: Dict_str_str={}) -> None:
+    def __init__(self, lat0: float, cell: list, pps: Dict_str_str, positions: Dict_str_list={}, scaled_positions: Dict_str_list={}, positions_angstrom_lat0: Dict_str_list={}, orbitals: Dict_str_str={}, masses: Dict_str_float={}, magmoms: Dict_str_float={}, move: Dict_str_int={}, abfs: Dict_str_str={}) -> None:
         """Initialize Stru object
 
-        :params lat0: int, lattice constant in unit bohr. 
+        :params lat0: float, lattice constant in unit bohr. 
         :params cell: list, lattice vector in unit `lat0`. 
         :params pps: dict, dict of pseudopotential file. 
         :params positions: dict, key is element name and value is list of atomic Cartesian coordinates in unit lat0. 
@@ -93,17 +93,18 @@ class Stru:
             self.numbers[elem] = len(self.positions[elem])
         self.pps = pps
         self.orbitals = orbitals
-        if len(masses) == 0:
-            self.masses = {elem:1 for elem in self.elements}
-        else:
+        if masses:
             self.masses = masses
-        if len(magmoms) == 0:
-            self.magmoms = {elem:0 for elem in self.elements}
         else:
+            self.masses = {elem:1 for elem in self.elements}
+        if magmoms:
             self.magmoms = magmoms
-        if len(move) == 0:
-            for i, elem in enumerate(self.elements):
-                for j in range(self.numbers[i]):
+        else:
+            self.magmoms = {elem:0 for elem in self.elements}
+        if not move:
+            move = defaultdict(list)
+            for elem in self.elements:
+                for j in range(self.numbers[elem]):
                     move[elem].append([1, 1, 1])
         self.move = move
         self.abfs = abfs
@@ -233,74 +234,6 @@ class Stru:
         self.efermi =  self.read_energy_from_file(file, "E_Fermi")
 
     #TODO: add set_force, set_stress
-
-@lru_cache(maxsize=None, typed=False)
-def read_stru(ntype: int, stru_file: str_PathLike) -> Stru:
-    """
-    Read `STRU` file
-
-    :params stru_file: absolute path of `STRU` file
-    """
-    
-    elements = []
-    masses = {}
-    pps = {}
-    orbitals = {}
-    cell = []
-    magmoms = {}
-    numbers = {}
-    positions = defaultdict(list)
-    scaled_positions = defaultdict(list)
-    positions_angstrom_lat0 = defaultdict(list)
-    move = defaultdict(list)
-    abfs = {}
-    with open(stru_file, "r") as file:
-        if search_sentence(file, "ATOMIC_SPECIES"):
-            for it in range(ntype):
-                line = skip_notes(file.readline())
-                elem, mass, pseudo = line.split()
-                elements.append(elem)
-                masses[elem] = float(mass)
-                pps[elem] = pseudo
-
-        if search_sentence(file, "NUMERICAL_ORBITAL"):
-            for elem in elements:
-                orbitals[elem] = skip_notes(file.readline())
-
-        if search_sentence(file, "ABFS_ORBITALL"):
-            for elem in elements:
-                abfs[elem] = skip_notes(file.readline())
-
-        if search_sentence(file, "LATTICE_CONSTANT"):
-            lat0 = float(skip_notes(file.readline()).split()[0])
-
-        if search_sentence(file, "LATTICE_VECTORS"):
-            for i in range(3):
-                cell.append(list(map(float, skip_notes(file.readline()).split())))
-
-        if search_sentence(file, "ATOMIC_POSITIONS"):
-            ctype = skip_notes(file.readline())
-
-        for elem in elements:
-            if search_sentence(file, elem):
-                magmoms[elem] = float(skip_notes(file.readline()).split()[0])
-                na = int(skip_notes(file.readline()).split()[0])
-                numbers[elem] = na
-                R_tmp = []
-                move_tmp = []
-                for i in range(na):
-                    line = skip_notes(file.readline())
-                    R_tmp.append(list(map(float, line.split()[:3])))
-                    move_tmp.append(list(map(int, line.split()[3:])))
-                if ctype == "Direct":
-                    scaled_positions[elem] = R_tmp
-                elif ctype == "Cartesian":
-                    positions[elem] = R_tmp
-                elif ctype == "Cartesian_angstrom":
-                    positions_angstrom_lat0[elem] = R_tmp
-                move[elem] = move_tmp
-
-    return Stru(lat0, cell, pps, positions=positions, scaled_positions=scaled_positions, positions_angstrom_lat0=positions_angstrom_lat0, orbitals=orbitals, masses=masses, magmoms=magmoms, move=move, abfs=abfs)
 
 def cal_dis(positions: dict, supercell_positions: dict) -> Dict_Tuple_Dict:
     """Calculate distance between two atoms
@@ -442,38 +375,6 @@ class Kpt:
         else:
             return index
 
-@lru_cache(maxsize=None, typed=False)
-def read_kpt(kpt_file: str_PathLike) -> Kpt:
-    """Read k-points file
-    
-    :params kpt_file: absolute path of k-points file
-    """
-    number = 0
-    with open(kpt_file,"r") as file:
-        if search_sentence(file, ["K_POINTS", "KPOINTS", "K"]):
-            number = int(file.readline())
-        mode = search_sentence(file, ["Gamma", "MP", "Line"])
-        if mode in ["Gamma", "MP"]:
-            line = skip_notes(file.readline()).split()
-            numbers = list(map(int, line[:3]))
-            offset = list(map(float, line[3:]))
-            return Kpt(mode, numbers, special_k=[], offset=offset)
-        elif mode == "Line":
-            special_k = []
-            numbers = []
-            klabel = []
-            for k in range(number):
-                line = file.readline()
-                if re.match("#", line):
-                    continue
-                else:
-                    linesplit = line.split(maxsplit=4)
-                special_k.append(list(map(float, linesplit[:3])))
-                numbers.append(int(linesplit[3]))
-                if len(linesplit) == 5:
-                    klabel.append(linesplit[4].strip('#\n '))
-            return Kpt(mode, numbers, special_k, offset=[], klabel=klabel)
-
 # Orb
 class Orb:
     """Orbital information"""
@@ -499,24 +400,3 @@ class Orb:
         """Return total number of orbitals"""
         return functools.reduce(operator.add, ((2*l+1)*n for l,n in enumerate(self.Nu)))
 #TODO: add a function to plot orbital
-
-@lru_cache(maxsize=None, typed=False)
-def read_orb(orbital: str_PathLike) -> Orb:
-    """Read orbital file
-    
-    :params orbital: absolute path of orbital file
-    """
-    Nu = []
-    with open(orbital, "r") as file:
-        for line in file:
-            line = skip_notes(line)
-            if line.startswith("Element"):
-                element = line.split()[-1]
-            elif line.startswith("Energy Cutoff(Ry)"):
-                ecut = float(line.split()[-1])
-            elif line.startswith("Radius Cutoff(a.u.)"):
-                rcut = float(line.split()[-1])
-            elif line.startswith("Number of"):
-                Nu.append(int(line.split()[-1]))
-                
-    return Orb(element=element, ecut=ecut, rcut=rcut, Nu=Nu, datafile=orbital)

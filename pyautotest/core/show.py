@@ -5,7 +5,7 @@ LastEditTime: 2021-04-23 16:38:39
 Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 '''
 
-from pyautotest.utils.tools import read_json
+from pyautotest.utils.IO import read_json
 from pyautotest.utils.typings import *
 
 import os

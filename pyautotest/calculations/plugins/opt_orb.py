@@ -6,7 +6,8 @@ Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 '''
 
 from pyautotest.calculations.baseclass import JobCalculation
-from pyautotest.utils.tools import folder_name, list_elem2str, read_json, get_input_line
+from pyautotest.utils.tools import folder_name, list_elem2str, get_input_line
+from pyautotest.utils.IO import read_json
 from pyautotest.calculations.structure import Stru
 from pyautotest.schedulers.data import Code
 from pyautotest.utils.typings import *
@@ -165,7 +166,7 @@ class SetDimers(JobCalculation):
         # STRU
         lat0=30
         cell=[[1, 0, 0], [0, 1, 0], [0, 0, 1]]
-        pps = {self.element : self.pps[self.element]}
+        pps = {self.element : Path(self.pps[self.element]).name}
         masses = {self.element : 1}
         magmoms = {self.element : 0}
         if self.element in ["Na","Li","K","Ca"]:

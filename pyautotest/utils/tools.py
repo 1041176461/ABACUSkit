@@ -1,7 +1,7 @@
 '''
 Date: 2021-03-29 21:35:30
 LastEditors: jiyuyang
-LastEditTime: 2021-04-29 13:38:49
+LastEditTime: 2021-05-16 14:30:15
 Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 '''
 
@@ -9,65 +9,7 @@ from pyautotest.utils.typings import *
 
 import re
 import sys
-import json
-from functools import lru_cache
-from collections import defaultdict
-from typing import Tuple, List, Union
-
-@lru_cache(maxsize=None, typed=False)
-def read_json(filename: str_PathLike) -> dict:
-    """ Read json file and return dict
-    
-    :params filename: json file
-    """
-    with open(filename, 'r') as file:
-        text = json.load(file)
-    return text
-
-def write_json(filename: str_PathLike, new_filename: str_PathLike, **kwargs) -> str_PathLike:
-    """ Read json file and modify some key-values, then write it to a new json file
-
-    :params filename: json file to be read
-    :params new_filename: json file to be written
-    :params **kwargs: any key-value to be written to new_filename
-    """
-    with open(filename, 'r') as file:
-        text = json.load(file)
-        for key, value in kwargs.items():
-            text[key] = value
-    with open(new_filename, 'w') as file:
-        json.dump(text, file, indent=4)
-    return new_filename
-
-@lru_cache(maxsize=None, typed=False)
-def read_cif(filename: str_PathLike) -> Tuple[tuple, dict]:
-    """Read cif file, return lattice and position
-    
-    :params filename: cif file
-    """
-    res = {}
-    with open(filename, 'r') as file:
-        for line in file:
-            if re.search("_cell_length_a", line):
-                a = float(line.split()[1])
-            if re.search("_cell_length_b", line):
-                b = float(line.split()[1])
-            if re.search("_cell_length_c", line):
-                c = float(line.split()[1])
-            if re.search("_cell_angle_alpha", line):
-                alpha = float(line.split()[1])
-            if re.search("_cell_angle_beta", line):
-                beta = float(line.split()[1])
-            if re.search("_cell_angle_gamma", line):
-                gamma = float(line.split()[1])
-            if re.search("_atom_site_fract_z", line):
-                position = defaultdict(list)
-                for atom in file:
-                    elem, x, y, z = atom.split()
-                    position[elem].append((float(x), float(y), float(z)))
-        lattice = (a, b, c, alpha, beta, gamma)
-    
-    return lattice, position
+from typing import List, Union
 
 def add_path(path: str_PathLike):
     """ Add a path into sys.path
@@ -132,8 +74,27 @@ def list_elem2str(a: Union[List[float], List[int]]) -> List[str]:
     """
     return list(map(str, a))
 
+def list_elem_2float(a: List[str]) -> List[float]:
+    """Convert type of list element to float
+    
+    :params a: 1-D list
+    """
+    return list(map(float, a))
+
+def list_elem_2int(a: List[str]) -> List[int]:
+    """Convert type of list element to int
+    
+    :params a: 1-D list
+    """
+    return list(map(int, a))
+
 def folder_name(T1: str, T2: str, i_dis: Union[int, float, str]) -> str:
     return f"{T1}-{T2}_{i_dis}"
+
+def delete_key(input_dict):
+    key_list = ["ocp", "ocp_set", "nelec", "out_charge"]
+    for i in key_list:
+        input_dict.pop(i, None)
 
 def get_input_line(input_dict:dict):
     """Return input lines in INPUT file
@@ -147,12 +108,3 @@ def get_input_line(input_dict:dict):
         if value:
             lines.append(f"{key.ljust(30)}{value}")
     return '\n'.join(lines)
-
-def write_input(input_dict:dict, filename:str_PathLike="INPUT"):
-    """Write INPUT file based on input_dict
-        
-    :params input_dict: dict of input parameters
-    """
-
-    with open(filename, 'w') as file:
-        file.write(get_input_line(input_dict))

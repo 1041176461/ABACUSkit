@@ -1,7 +1,7 @@
 '''
 Date: 2021-03-24 16:05:38
 LastEditors: jiyuyang
-LastEditTime: 2021-04-29 15:24:09
+LastEditTime: 2021-05-16 14:32:16
 Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 '''
 
@@ -11,6 +11,7 @@ from pyautotest.calculations.baseclass import ABACUSCalculation, JobCalculation
 from pyautotest.calculations.plugins.scf import SCF
 from pyautotest.schedulers.data import Code
 from pyautotest.utils.tools import *
+from pyautotest.utils.IO import *
 from pyautotest.utils.typings import *
 from pyautotest.utils.test import profile
 
@@ -41,6 +42,7 @@ class SetDimers(ABACUSCalculation):
         super().__init__(input_dict, stru, kpt, **kwargs)
         if self.input_dict["basis_type"] not in ["lcao", "lcao_in_pw"]:
             raise KeyError("ABFs based on lcao basis, so `basis_type` in 'INPUT' must be 'lcao' or 'lcao_in_pw'.")
+        delete_key(self.input_dict)
         self.Nu = Nu
         self.dimer_num = dimer_num
         self.folder_weight = {}
@@ -433,22 +435,16 @@ class EXX(SCF):
         super().__init__(input_dict, stru, kpt, **kwargs)
         if self.input_dict["basis_type"] not in ["lcao", "lcao_in_pw"]:
             raise KeyError("ABFs based on lcao basis, so `basis_type` in 'INPUT' must be 'lcao' or 'lcao_in_pw'.")
-        self.delete_key()
         self.Nu = Nu
         self.dimer_num = dimer_num
         self.dr = dr
         self.lr = lr
         self.kwargs = kwargs
 
-    def delete_key(self):
-        key_list = ["ocp", "ocp_set", "nelec"]
-        for i in key_list:
-            self.input_dict.pop(i, None)
-
     def _prepare(self, **kwargs):
         """Prepare input files for hybrid  e.g. input.json"""
 
-        self.obj_setdimers = SetDimers(self.input_dict, self.stru, self.kpt, self.Nu, self.dimer_num, **self.kwargs) if not Path("folders").exists() else None
+        self.obj_setdimers = SetDimers(deepcopy(self.input_dict), self.stru, self.kpt, self.Nu, self.dimer_num, **self.kwargs) if not Path("folders").exists() else None
         self.obj_optabfs = OptABFs(self.input_dict["exx_opt_orb_ecut"], self.stru, self.Nu, self.dr, self.lr, **self.kwargs) if not Path("opt_orb_"+"-".join(list_elem2str(self.Nu))).exists() else None
 
     def _execute(self, command: Code, external_command: Command="", **kwargs):

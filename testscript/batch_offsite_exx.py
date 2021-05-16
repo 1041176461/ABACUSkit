@@ -1,7 +1,6 @@
-from pyautotest.calculations.structure import read_stru, read_kpt
 from pyautotest.schedulers.data import Code
 from pyautotest.calculations.plugins.exx import SetDimers, OptABFs, EXX
-from pyautotest.utils.tools import write_input
+from pyautotest.utils.IO import write_input, read_kpt, read_stru
 
 ntype = 4
 ecut = 100
