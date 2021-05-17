@@ -13,7 +13,7 @@ from pyautotest.calculations.structure import Stru, Kpt, Orb
 import re
 import json
 from functools import lru_cache
-from collections import defaultdict, OrderedDict
+from collections import defaultdict
 from typing import Tuple
 
 @lru_cache(maxsize=None, typed=False)
@@ -161,7 +161,7 @@ def read_kpt(kpt_file: str_PathLike) -> Kpt:
         mode = search_sentence(file, ["Gamma", "MP", "Line"])
         if mode in ["Gamma", "MP"]:
             line = skip_notes(file.readline()).split()
-            numbers = list_elem_2int(int, line[:3])
+            numbers = list_elem_2int(line[:3])
             offset = list_elem_2float(line[3:])
             return Kpt(mode, numbers, special_k=[], offset=offset)
         elif mode == "Line":
@@ -174,7 +174,7 @@ def read_kpt(kpt_file: str_PathLike) -> Kpt:
                     continue
                 else:
                     linesplit = line.split(maxsplit=4)
-                special_k.append(list(map(float, linesplit[:3])))
+                special_k.append(list_elem_2float(linesplit[:3]))
                 numbers.append(int(linesplit[3]))
                 if len(linesplit) == 5:
                     klabel.append(linesplit[4].strip('#\n '))
