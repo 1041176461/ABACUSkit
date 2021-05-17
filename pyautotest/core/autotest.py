@@ -8,6 +8,7 @@ Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 from pyautotest.schedulers.data import Code
 from pyautotest.utils.typings import *
 from pyautotest.calculations.structure import *
+from pyautotest.utils.IO import read_stru, read_kpt
 
 import re
 import os

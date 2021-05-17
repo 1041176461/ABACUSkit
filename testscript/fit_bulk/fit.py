@@ -4,7 +4,7 @@ LastEditors: jiyuyang
 LastEditTime: 2021-05-14 16:10:36
 Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 '''
-from pyautotest.calculations.structure import read_stru
+from pyautotest.utils.IO import read_stru
 from pathlib import Path
 from pyautotest.utils.constants import BOHR_TO_A
 

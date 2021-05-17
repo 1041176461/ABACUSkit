@@ -1,4 +1,4 @@
-from pyautotest.calculations import structure
+from pyautotest.utils.IO import read_stru
 from pathlib import Path
 import shutil
 import os
@@ -10,7 +10,7 @@ filelist.remove("STRU")
 tpath = "./" # target directory
 ntype = 2
 
-obj = structure.read_stru(ntype, stru_path)
+obj = read_stru(ntype, stru_path)
 latc = obj.lat0
 delta = 0.01
 for i in range(-1, 4):
