@@ -1,0 +1,6 @@
+{
+	"filename" : "/home/jiyy/exx-test/CsAgInCl/old/scf/hse_scf/psi-4321/exx_4-3-2-1/band/OUT.ABACUS/BANDS_1.dat",
+	"efermi" : 3.995208143568131,
+	"energy_range"	: [-3, 5],
+	"kptfile" : "/home/jiyy/exx-test/CsAgInCl/old/scf/hse_scf/psi-4321/exx_4-3-2-1/band/KPT"
+}

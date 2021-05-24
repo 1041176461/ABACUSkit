@@ -7,7 +7,7 @@ Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 
 from pyautotest.utils.constants import BOHR_TO_A
 from pyautotest.utils.typings import *
-from pyautotest.utils.tools import get_input_line, list_elem2str, list_elem_2float, list_elem_2int, search_sentence, skip_notes
+from pyautotest.utils.tools import get_input_line, list_elem_2float, list_elem_2int, search_sentence, skip_notes
 from pyautotest.calculations.structure import Stru, Kpt, Orb
 
 import re
@@ -195,35 +195,3 @@ def read_orb(orbital: str_PathLike) -> Orb:
                 Nu.append(int(line.split()[-1]))
                 
     return Orb(element=element, ecut=ecut, rcut=rcut, Nu=Nu, datafile=orbital)
-
-def POSCAR_to_Stru(filename:str_PathLike="", pps:Dict_str_str={}, orbitals:Dict_str_str={}, masses:Dict_str_float={}, magmoms:Dict_str_float={}, move:Dict_str_int={}, abfs:Dict_str_str={}) -> Stru:
-    """
-    Convert POSCAR of VASP to STRU of ABACUS
-    """
-
-    def skip_notes(line):
-        line = re.compile("[' ']+").sub(",", line).strip("\n").split(",")
-        return line[1:]
-
-    with open(filename, 'r') as f:
-        tag = f.readline()
-        lat0 = float(f.readline())/BOHR_TO_A
-        cell = []
-        for i in range(3):
-            cell.append(list_elem_2float(skip_notes(f.readline())))
-        elem = skip_notes(f.readline())
-        num = skip_notes(f.readline())
-        elem_num = dict(zip(elem, num))
-        ctype = f.readline().strip()
-        positions = {}
-        scaled_positions = {}
-        for j, k in elem_num.items():
-            R_tmp = []
-            for m in range(int(k)):
-                R_tmp.append(list_elem_2float(skip_notes(f.readline())))
-            if ctype == "Direct":
-                scaled_positions[j] = R_tmp
-            elif ctype == "Cartesian":
-                positions[j] = R_tmp
-
-    return Stru(lat0, cell, pps, positions=positions, scaled_positions=scaled_positions, orbitals=orbitals, masses=masses, magmoms=magmoms, move=move, abfs=abfs)

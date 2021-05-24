@@ -4,7 +4,8 @@ LastEditors: jiyuyang
 LastEditTime: 2021-04-25 10:35:11
 Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 '''
-#TODO: refactor code with typing, logging, warnings etc.
+#TODO: refactor code with logging, warnings etc.
+from pyautotest.core.convert import Convert
 from pyautotest.core.run import Run
 from pyautotest.core.show import Show
 
@@ -31,6 +32,11 @@ def main():
     parser_show.add_argument('-b', '--band', dest='band', type=str, default=None, help='plot band structure and show band information.')
     parser_show.add_argument('-d', '--dos', dest='dos', type=str, default=None, help='plot density of state(DOS).')
     parser_show.set_defaults(func=Show().show_cmdline)
+
+    # Convert
+    parser_convert = subparsers.add_parser('convert', help='convert file from one format to another')
+    parser_convert.add_argument('-s', '--stru', dest='stru', type=str, default=None, help="convert structure file of other codes to ABACUS's.")
+    parser_convert.set_defaults(func=Convert().convert_cmdline)
     
     args = parser.parse_args()
     args.func(args)
