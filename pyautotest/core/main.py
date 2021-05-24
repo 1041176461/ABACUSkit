@@ -35,7 +35,7 @@ def main():
 
     # Convert
     parser_convert = subparsers.add_parser('convert', help='convert file from one format to another')
-    parser_convert.add_argument('-s', '--stru', dest='stru', type=str, default=None, help="convert structure file of other codes to ABACUS's.")
+    parser_convert.add_argument('-file', '--file', dest='file', type=str, default=None, help="convert structure file format to another.")
     parser_convert.set_defaults(func=Convert().convert_cmdline)
     
     args = parser.parse_args()

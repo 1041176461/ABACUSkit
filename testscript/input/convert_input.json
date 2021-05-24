@@ -1,5 +1,5 @@
 {
-    "filename" : "Cu2O.vasp",
+    "srcfile" : "Cu2O.vasp",
     "pps" : {
         "Cu" : "Cu_ONCV_PBE-1.0.upf",
         "O" : "O_ONCV_PBE-1.0.upf"

@@ -39,35 +39,6 @@ def write_json(filename: str_PathLike, new_filename: str_PathLike, **kwargs) -> 
         json.dump(text, file, indent=4)
     return new_filename
 
-def read_cif(filename: str_PathLike) -> Tuple[tuple, dict]:
-    """Read cif file, return lattice and position
-    
-    :params filename: cif file
-    """
-    res = {}
-    with open(filename, 'r') as file:
-        for line in file:
-            if re.search("_cell_length_a", line):
-                a = float(line.split()[1])
-            if re.search("_cell_length_b", line):
-                b = float(line.split()[1])
-            if re.search("_cell_length_c", line):
-                c = float(line.split()[1])
-            if re.search("_cell_angle_alpha", line):
-                alpha = float(line.split()[1])
-            if re.search("_cell_angle_beta", line):
-                beta = float(line.split()[1])
-            if re.search("_cell_angle_gamma", line):
-                gamma = float(line.split()[1])
-            if re.search("_atom_site_fract_z", line):
-                position = defaultdict(list)
-                for atom in file:
-                    elem, x, y, z = atom.split()
-                    position[elem].append((float(x), float(y), float(z)))
-        lattice = (a, b, c, alpha, beta, gamma)
-    
-    return lattice, position
-
 def write_input(input_dict:dict, filename:str_PathLike="INPUT"):
     """Write INPUT file based on input_dict
         
