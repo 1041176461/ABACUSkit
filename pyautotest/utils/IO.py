@@ -12,11 +12,9 @@ from pyautotest.calculations.structure import Stru, Kpt, Orb
 
 import re
 import json
-from functools import lru_cache
 from collections import defaultdict
 from typing import Tuple
 
-@lru_cache(maxsize=None, typed=False)
 def read_json(filename: str_PathLike) -> dict:
     """ Read json file and return dict
     
@@ -41,7 +39,6 @@ def write_json(filename: str_PathLike, new_filename: str_PathLike, **kwargs) -> 
         json.dump(text, file, indent=4)
     return new_filename
 
-@lru_cache(maxsize=None, typed=False)
 def read_cif(filename: str_PathLike) -> Tuple[tuple, dict]:
     """Read cif file, return lattice and position
     
@@ -80,7 +77,6 @@ def write_input(input_dict:dict, filename:str_PathLike="INPUT"):
     with open(filename, 'w') as file:
         file.write(get_input_line(input_dict))
 
-@lru_cache(maxsize=None, typed=False)
 def read_stru(ntype: int, stru_file: str_PathLike) -> Stru:
     """
     Read `STRU` file
@@ -148,7 +144,6 @@ def read_stru(ntype: int, stru_file: str_PathLike) -> Stru:
 
     return Stru(lat0, cell, pps, positions=positions, scaled_positions=scaled_positions, positions_angstrom_lat0=positions_angstrom_lat0, orbitals=orbitals, masses=masses, magmoms=magmoms, move=move, abfs=abfs)
 
-@lru_cache(maxsize=None, typed=False)
 def read_kpt(kpt_file: str_PathLike) -> Kpt:
     """Read k-points file
     
@@ -180,7 +175,6 @@ def read_kpt(kpt_file: str_PathLike) -> Kpt:
                     klabel.append(linesplit[4].strip('#\n '))
             return Kpt(mode, numbers, special_k, offset=[], klabel=klabel)
 
-@lru_cache(maxsize=None, typed=False)
 def read_orb(orbital: str_PathLike) -> Orb:
     """Read orbital file
     

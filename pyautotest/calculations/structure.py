@@ -16,23 +16,35 @@ import operator
 import itertools
 import decimal
 import typing
-from functools import lru_cache
 from io import TextIOWrapper
 from copy import deepcopy
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 
 # STRU
 def Direct2Cartesian(positions: Dict_str_list, cell: Dict_str_float) -> Dict_str_list:
     """Transform direct coordinates to Cartesian format in unit lat0
     
     :params postions: atomic direct coordinates in unit lat0
-    :params cell: list of lattice vectors. If `format` is "Direct", it should be set. lattice vectors in ABACUS are scaled by the lattice constant. Default: []
+    :params cell: list of lattice vectors.
     """
 
     new_positions = deepcopy(positions)
     for pos in new_positions:
         new_positions[pos] = np.dot(new_positions[pos], cell)
 
+    return new_positions
+
+def Cartesian2Direct(positions: Dict_str_list, cell: Dict_str_float) -> Dict_str_list:
+    """Transform Cartesian coordinates to direct format in unit lat0
+    
+    :params postions: atomic Cartesian coordinates in unit lat0
+    :params cell: list of lattice vectors.
+    """
+
+    new_positions = deepcopy(positions)
+    for pos in new_positions:
+        new_positions[pos] = np.dot(new_positions[pos], np.linalg.inv(cell))
+    
     return new_positions
 
 def Cartesian_angstrom2Cartesian(positions: Dict_str_list) -> Dict_str_list:
@@ -74,8 +86,8 @@ class Stru:
             raise TypeError("'positions', 'scaled_positions' and `positions_angstrom_lat0` can not be set simultaneously")
         elif positions:
             self._ctype = "Cartesian"
-            self.scaled_positions = scaled_positions
             self.positions = positions
+            self.scaled_positions = Cartesian2Direct(positions, self.cell)
         elif scaled_positions:
             self._ctype = "Direct"
             self.scaled_positions = scaled_positions
@@ -87,7 +99,7 @@ class Stru:
         else:
             raise TypeError("One of 'positions' and 'scaled_positions' must be set")
         self.elements = []
-        self.numbers = {}
+        self.numbers = OrderedDict()
         for elem in self.positions:
             self.elements.append(elem)
             self.numbers[elem] = len(self.positions[elem])
@@ -167,7 +179,7 @@ class Stru:
 
         return '\n'.join(line)
 
-    def write_stru(self, filename: str) -> None:
+    def write_stru(self, filename: str="STRU") -> None:
         """write `STRU` file
         
         :params filename: absolute path of `STRU` file
@@ -205,7 +217,6 @@ class Stru:
         return self.volume_bohr*pow(BOHR_TO_A, 3)
 
     @classmethod
-    @lru_cache(maxsize=None, typed=True)
     def read_energy_from_file(cls, file: typing.Union[TextIOWrapper, str_PathLike], name:str):
         """Read energy from ABACUS running log file"""
 
