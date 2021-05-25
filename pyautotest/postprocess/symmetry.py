@@ -7,7 +7,6 @@ Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 
 from pyautotest.calculations.structure import Kpt, Stru
 from pyautotest.utils.constants import BOHR_TO_A
-from pyautotest.utils.typings import Dict_str_str, Dict_str_list, Dict_str_float, Dict_str_int
 
 import spglib
 import seekpath
