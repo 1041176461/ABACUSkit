@@ -339,7 +339,10 @@ class Kpt:
             line.append(str(len(self.special_k)))
             line.append(self.mode)
             for i, k in enumerate(self.special_k):
-                line.append(" ".join(list_elem2str(k+[self.numbers[i]])))
+                if self.klabel:
+                    line.append(" ".join(list_elem2str(k+[self.numbers[i]]))+'\t#'+self.klabel[i])
+                else:
+                    line.append(" ".join(list_elem2str(k+[self.numbers[i]])))
 
         return '\n'.join(line)
 
@@ -353,7 +356,7 @@ class Kpt:
             file.write(self.get_kpt())
 
     @property
-    def kpath(self):
+    def full_kpath(self):
         """Uniform k-point path"""
 
         total_k = np.sum(self.numbers)

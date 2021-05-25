@@ -16,7 +16,6 @@ from collections import OrderedDict, namedtuple
 from typing import Dict, Sequence, Tuple, Union, List
 from matplotlib import axes
 import matplotlib.pyplot as plt
-from functools import lru_cache
 
 def energy_minus_efermi(energy:Sequence , efermi:float) -> np.ndarray:
     """Return energy after subtracting the Fermi level
@@ -31,7 +30,6 @@ class BandPlot:
     """Plot band structure"""
 
     @classmethod
-    @lru_cache(maxsize=None, typed=False)
     def read(cls, filename:str_PathLike) -> Tuple[np.ndarray, np.ndarray]:
         """Read band data file and return k-points and energy
         
@@ -129,7 +127,7 @@ class BandPlot:
         energy = energy_minus_efermi(energy, efermi)
 
         ax.plot(kpoints, energy, lw=0.8, color=color, label=label)
-        cls.info(kpt.kpath, energy)
+        cls.info(kpt.full_kpath, energy)
         index = kpt.label_special_k
         cls._set_figure(ax, index, energy_range)
 
@@ -171,7 +169,7 @@ class BandPlot:
                 emax = energy_max
 
             ax.plot(kpoints, energy, lw=0.8, color=color[i], label=label[i])
-            cls.info(kpt.kpath, energy)
+            cls.info(kpt.full_kpath, energy)
         
         index = kpt.label_special_k
         cls._set_figure(ax, index, energy_range)
@@ -254,7 +252,6 @@ class DosPlot:
         return string
 
     @classmethod
-    @lru_cache(maxsize=None, typed=False)
     def read(cls, tdosfile:str_PathLike='', pdosfile:str_PathLike='') -> tuple:
         """Read DOS data file, if both `tdosfile` and `pdosfile` set, it will ony read `tdosfile`
         
