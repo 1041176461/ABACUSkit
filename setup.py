@@ -9,12 +9,12 @@ from setuptools import setup, find_packages
 
 if __name__ == "__main__":
     setup(
-        name = 'pyautotest',
-        version = '0.3',
+        name = 'abacuskit',
+        version = '1.0.0',
         packages = find_packages(),
-        description = 'Auto-test for ABACUS',
+        description = 'Autotest and Postprocessing tool for ABACUS code',
         author = 'jiyuyang',
         author_email = 'jiyuyang@mail.ustc.edu.cn',
         url = 'None',
-        entry_points={'console_scripts': ['autotest=pyautotest.core.main:main']}
+        entry_points={'console_scripts': ['abacuskit=abacuskit.core.main:main']}
     )

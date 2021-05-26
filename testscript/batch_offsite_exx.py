@@ -1,6 +1,6 @@
-from pyautotest.schedulers.data import Code
-from pyautotest.calculations.plugins.exx import SetDimers, OptABFs, EXX
-from pyautotest.utils.IO import write_input, read_kpt, read_stru
+from abacuskit.schedulers.data import Code
+from abacuskit.calculations.plugins.exx import SetDimers, OptABFs, EXX
+from abacuskit.utils.IO import write_input, read_kpt, read_stru
 
 ntype = 4
 ecut = 100

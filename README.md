@@ -4,8 +4,8 @@
  * @LastEditTime: 2021-04-29 17:31:28
  * @Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 -->
-# ABACUS自动测试
-pyautotest是一个以工作流方式进行ABACUS自动测试的程序，并且可对ABACUS计算结果进行后处理。
+# ABACUSkit
+abacuskit是一个以工作流方式进行ABACUS自动测试的程序，并且可对ABACUS计算结果进行一系列后处理操作。
 
 ## 特点
 - **工作流**：自动完成输入文件的生成，计算任务的提交以及输出文件的分析等一系列工作，支持串行完成多个计算

@@ -1,4 +1,4 @@
-from pyautotest.utils.IO import read_stru
+from abacuskit.utils.IO import read_stru
 from pathlib import Path
 import shutil
 import os
