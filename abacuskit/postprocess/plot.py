@@ -25,9 +25,36 @@ def energy_minus_efermi(energy:Sequence , efermi:float) -> np.ndarray:
 
     return np.array(energy)-efermi
 
-
 class BandPlot:
     """Plot band structure"""
+
+    @classmethod
+    def set_vcband(cls, energy:Sequence) -> Tuple[namedtuple, namedtuple]:
+        """Separate valence and conduct band
+
+        :params energy: band energy after subtracting the Fermi level
+        """
+
+        e_T = energy.T
+        num_gt_Ef = (e_T > 0).sum(axis=1)
+
+        Band = namedtuple('Band', ['band_index', 'band', 'value', 'k_index'])
+
+        # valance band
+        band_vbm_index = np.where(num_gt_Ef == 0)[0]
+        band_vbm = e_T[band_vbm_index]
+        evbm = np.max(band_vbm)
+        k_vbm_index = np.where(band_vbm == evbm)[1]
+        vb = Band(band_vbm_index, band_vbm-evbm, evbm-evbm, k_vbm_index)
+
+        # conduct band
+        band_cbm_index = np.where(num_gt_Ef != 0)[0]
+        band_cbm= e_T[band_cbm_index]
+        ecbm = np.min(band_cbm)
+        k_cbm_index = np.where(band_cbm == ecbm)[1]
+        cb = Band(band_cbm_index, band_cbm-evbm, ecbm-evbm, k_cbm_index)
+
+        return vb, cb
 
     @classmethod
     def read(cls, filename:str_PathLike) -> Tuple[np.ndarray, np.ndarray]:
@@ -124,10 +151,10 @@ class BandPlot:
             color = 'black'
 
         kpoints, energy = cls.read(datafile)
-        energy = energy_minus_efermi(energy, efermi)
+        vb, cb = cls.set_vcband(energy_minus_efermi(energy, efermi))
 
-        ax.plot(kpoints, energy, lw=0.8, color=color, label=label)
-        cls.info(kpt.full_kpath, energy)
+        ax.plot(kpoints, np.vstack((vb.band, cb.band)).T, lw=0.8, color=color, label=label)
+        cls.info(kpt.full_kpath, vb, cb)
         index = kpt.label_special_k
         cls._set_figure(ax, index, energy_range)
 
@@ -160,16 +187,16 @@ class BandPlot:
         emax = np.inf
         for i, file in enumerate(datafile):
             kpoints, energy = cls.read(file)
-            energy = energy_minus_efermi(energy, efermi[i])
-            energy_min = np.min(energy)
-            energy_max = np.max(energy)
+            vb, cb = cls.set_vcband(energy_minus_efermi(energy, efermi[i]))
+            energy_min = np.min(vb)
+            energy_max = np.max(cb)
             if energy_min>emin:
                 emin = energy_min
             if energy_max<emax:
                 emax = energy_max
 
-            ax.plot(kpoints, energy, lw=0.8, color=color[i], label=label[i])
-            cls.info(kpt.full_kpath, energy)
+            ax.plot(kpoints, np.vstack((vb.band, cb.band)).T, lw=0.8, color=color[i], label=label[i])
+            cls.info(kpt.full_kpath, vb, cb)
         
         index = kpt.label_special_k
         cls._set_figure(ax, index, energy_range)
@@ -177,37 +204,15 @@ class BandPlot:
         plt.savefig(outfile)
 
     @classmethod
-    def bandgap(cls, energy:Sequence):
-        """Calculate band gap
-        
-        :params energy: band energy after subtracting the Fermi level
-        """
+    def bandgap(cls, vb:namedtuple, cb:namedtuple):
+        """Calculate band gap"""
 
-        e_T = energy.T
-        num_gt_Ef = (e_T > 0).sum(axis=1)
+        gap = cb.value-vb.value
 
-        Band = namedtuple('Band', ['band_index', 'band', 'value', 'k_index'])
-
-        # valance band
-        band_vbm_index = np.where(num_gt_Ef == 0)[0]
-        band_vbm = e_T[band_vbm_index]
-        evbm = np.max(band_vbm)
-        k_vbm_index = np.where(band_vbm == evbm)[1]
-        vbm = Band(band_vbm_index, band_vbm, evbm, k_vbm_index)
-
-        # conduct band
-        band_cbm_index = np.where(num_gt_Ef != 0)[0]
-        band_cbm= e_T[band_cbm_index]
-        ecbm = np.min(band_cbm)
-        k_cbm_index = np.where(band_cbm == ecbm)[1]
-        cbm = Band(band_cbm_index, band_cbm, ecbm, k_cbm_index)
-
-        gap = ecbm-evbm
-
-        return gap, vbm, cbm
+        return gap
 
     @classmethod
-    def info(cls, kpath:Sequence, energy:Sequence):
+    def info(cls, kpath:Sequence, vb:namedtuple, cb:namedtuple):
         """Output the information of band structure
         
         :params kpath: k-points path 
@@ -223,16 +228,16 @@ class BandPlot:
                     btype = "Indirect"
             return btype
 
-        gap, vbm, cbm = cls.bandgap(energy)
+        gap = cls.bandgap(vb, cb)
         print("--------------------------Band Structure--------------------------", flush=True)
-        print(f"{'Band character:'.ljust(30)}{band_type(vbm.k_index, cbm.k_index)}", flush=True)
+        print(f"{'Band character:'.ljust(30)}{band_type(vb.k_index, cb.k_index)}", flush=True)
         print(f"{'Band gap(eV):'.ljust(30)}{gap: .4f}", flush=True)
         print(f"{'Band index:'.ljust(30)}{'HOMO'.ljust(10)}{'LUMO'}", flush=True)
-        print(f"{''.ljust(30)}{str(vbm.band_index[-1]).ljust(10)}{str(cbm.band_index[0])}", flush=True)
-        print(f"{'Eigenvalue of VBM(eV):'.ljust(30)}{vbm.value: .4f}", flush=True)
-        print(f"{'Eigenvalue of CBM(eV):'.ljust(30)}{cbm.value: .4f}", flush=True)
-        vbm_k = np.unique(kpath[vbm.k_index], axis=0)
-        cbm_k = np.unique(kpath[cbm.k_index], axis=0)
+        print(f"{''.ljust(30)}{str(vb.band_index[-1]).ljust(10)}{str(cb.band_index[0])}", flush=True)
+        print(f"{'Eigenvalue of VBM(eV):'.ljust(30)}{vb.value: .4f}", flush=True)
+        print(f"{'Eigenvalue of CBM(eV):'.ljust(30)}{cb.value: .4f}", flush=True)
+        vbm_k = np.unique(kpath[vb.k_index], axis=0)
+        cbm_k = np.unique(kpath[cb.k_index], axis=0)
         print(f"{'Location of VBM'.ljust(30)}{' '.join(list_elem2str(vbm_k[0]))}", flush=True)
         for i, j in enumerate(vbm_k):
             if i != 0:
@@ -250,6 +255,49 @@ class DosPlot:
         if eval(string) <= 1e-20:
             string = "0"
         return string
+
+    @classmethod
+    def set_vcband(cls, energy:Sequence) -> Tuple[namedtuple, namedtuple]:
+        """Separate valence and conduct band
+
+        :params energy: band energy after subtracting the Fermi level
+        """
+
+        Band = namedtuple('Band', ['band', 'value'])
+
+        # valance band
+        band_vbm_index = np.where(energy <= 0)[0]
+        band_vbm = energy[band_vbm_index]
+        evbm = np.max(band_vbm)
+        vb = Band(band_vbm-evbm, evbm-evbm)
+
+        # conduct band
+        band_cbm_index = np.where(energy > 0)[0]
+        band_cbm= energy[band_cbm_index]
+        ecbm = np.min(band_cbm)
+        cb = Band(band_cbm-evbm, ecbm-evbm)
+
+        return vb, cb
+
+    @classmethod
+    def info(cls, vb:namedtuple, cb:namedtuple):
+        """Output the information of band structure
+        
+        :params kpath: k-points path 
+        :params energy: band energy after subtracting the Fermi level
+        """
+
+        gap = cls.bandgap(vb, cb)
+        print("--------------------------Density of State--------------------------", flush=True)
+        print(f"{'Band gap(eV):'.ljust(30)}{gap: .4f}", flush=True)
+
+    @classmethod
+    def bandgap(cls, vb:namedtuple, cb:namedtuple):
+        """Calculate band gap"""
+
+        gap = cb.value-vb.value
+
+        return gap
 
     @classmethod
     def read(cls, tdosfile:str_PathLike='', pdosfile:str_PathLike='') -> tuple:
@@ -353,12 +401,14 @@ class DosPlot:
         nsplit = len(res)
         if nsplit == 2:
             energy, dos = res
-            energy = energy_minus_efermi(energy, efermi)
+            vb, cb = cls.set_vcband(energy_minus_efermi(energy, efermi))
+            energy = np.concatenate((vb.band, cb.band))
             ax.plot(energy, dos, lw=0.8, c='gray', linestyle='-', label='TDOS')
                 
         elif nsplit == 3:
             energy, dos_up, dos_dw = res
-            energy = energy_minus_efermi(energy, efermi)
+            vb, cb = cls.set_vcband(energy_minus_efermi(energy, efermi))
+            energy = np.concatenate((vb.band, cb.band))
             dos_dw = -dos_dw
             ax.plot(energy, dos_up, lw=0.8, c='gray', linestyle='-', label=r'$TDOS \uparrow$')
             ax.plot(energy, dos_up, lw=0.8, c='gray', linestyle='--', label=r'$TDOS \downarrow$')
@@ -403,7 +453,9 @@ class DosPlot:
             if not elements:
                 raise TypeError("Only when `pdosfile` and `species` are both set, it will plot PDOS.")
             energy, orbitals = res
-            energy_f = energy_minus_efermi(energy, efermi)
+            vb, cb = cls.set_vcband(energy_minus_efermi(energy, efermi))
+            cls.info(vb, cb)
+            energy_f = np.concatenate((vb.band, cb.band))
 
             # TDOS
             dos, nsplit = cls._all_sum(orbitals)

@@ -12,7 +12,7 @@ from abacuskit.core.show import Show
 import argparse
 
 def main():
-    parser = argparse.ArgumentParser(prog='autotest', description='Auto-test for ABACUS')
+    parser = argparse.ArgumentParser(prog='abacuskit', description='Auto-test and Postprocessing tools for ABACUS')
     subparsers = parser.add_subparsers(help='sub-command help')
 
     # Run

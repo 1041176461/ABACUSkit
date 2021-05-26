@@ -12,7 +12,7 @@ if __name__ == "__main__":
         name = 'abacuskit',
         version = '1.0.0',
         packages = find_packages(),
-        description = 'Autotest and Postprocessing tool for ABACUS code',
+        description = 'Autotest and Postprocessing tools for ABACUS code',
         author = 'jiyuyang',
         author_email = 'jiyuyang@mail.ustc.edu.cn',
         url = 'None',

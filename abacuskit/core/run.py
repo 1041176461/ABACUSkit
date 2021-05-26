@@ -89,11 +89,11 @@ class Run:
                 new_filename = os.path.join(subdst, os.path.basename(filename))
                 write_json(filename, new_filename, src=os.path.join(text["src"], os.path.basename(subsrc)), dst=subdst)
                 os.chdir(subdst)
-                line = f"autotest run --single={new_filename} --local True"
+                line = f"abacuskit run --single={new_filename} --local True"
                 submit_script(new_filename, line)
 
         else:
-            line = f"autotest run --batch={filename} --local True"
+            line = f"abacuskit run --batch={filename} --local True"
             submit_script(filename, line)
 
     @classmethod
@@ -103,7 +103,7 @@ class Run:
         :params filename: absolute path of `input.json`
         """
 
-        line = f"autotest run --single={filename} --local True"
+        line = f"abacuskit run --single={filename} --local True"
         submit_script(filename, line)
 
     @classmethod
