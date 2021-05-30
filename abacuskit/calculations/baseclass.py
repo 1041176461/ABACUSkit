@@ -5,16 +5,17 @@ LastEditTime: 2021-04-28 15:50:39
 Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 '''
 
-from abacuskit.schedulers.data import Code
-from abacuskit.calculations.structure import Stru, Kpt
-from abacuskit.utils.typings import *
-
+import abc
 import os
 import re
-import abc
 import shutil
 import typing
 from pathlib import Path
+
+from abacuskit.calculations.structure import Kpt, Stru
+from abacuskit.schedulers.data import Code
+from abacuskit.utils.typings import *
+
 
 class JobCalculation(abc.ABC):
     """Single job calculation"""
@@ -49,14 +50,14 @@ class JobCalculation(abc.ABC):
     @abc.abstractmethod
     def _parse(self, **kwargs) -> dict:
         """Parse output of a finished job
-        
+
         :return: some result
         """
 
         res = {}
         return res
 
-    def calculate(self, command: Command, save_dir: str_PathLike="", **kwargs):
+    def calculate(self, command: Command, save_dir: str_PathLike = "", **kwargs):
         """The whole process of job calculation
 
         :params command: string or `abacuskit.schedulers.data.Code` object to execute calculation
@@ -72,22 +73,23 @@ class JobCalculation(abc.ABC):
 
     def save(self, save_dir: str_PathLike):
         """Save all input and out files of last calculation
-        
+
         :params save_dir: directory where to save all input and output files
         """
 
-        all_files =  Path(".").iterdir()
+        all_files = Path(".").iterdir()
         Path(save_dir).mkdir(parents=True, exist_ok=False)
         for file in all_files:
             if Path(file).is_file():
                 shutil.copy(file, save_dir)
+
 
 class ABACUSCalculation(JobCalculation):
     """ABACUS Calculation"""
 
     def __init__(self, input_dict: dict, stru: typing.Optional[Stru], kpt: typing.Optional[Kpt], **kwargs) -> None:
         """Set input parameters of ABACUS calcultion
-        
+
         :params input_dict: dict of input parameters
         :params stru: object of `abacuskit.calculations.structure.Stru`
         :params kpt: object of `abacuskit.calculations.structure.Kpt`
@@ -118,9 +120,9 @@ class ABACUSCalculation(JobCalculation):
         elif self.input_dict["gamma_only"] != 1:
             raise FileNotFoundError("`gamma_only` can only be 1 or 0.")
 
-    def _check(self, index:int=0, **kwargs) -> typing.Union[int, str]:
+    def _check(self, index: int = 0, **kwargs) -> typing.Union[int, str]:
         """Check if job is finished
-        
+
         :params index: calculation index in workflow
         """
 
@@ -128,10 +130,11 @@ class ABACUSCalculation(JobCalculation):
         with open(f"cal_{index}.log", 'r') as file:
             for line in file:
                 if re.search("TOTAL  Time  : ", line):
-                    time = re.search("(TOTAL  Time  : )([a-z0-9\s]+)", line).group(2)
+                    time = re.search(
+                        "(TOTAL  Time  : )([a-z0-9\s]+)", line).group(2)
         if time == 0:
             raise Exception(f"Calculation {index} may not finish.")
-        
+
         return time
 
     def _get_input_line(self):

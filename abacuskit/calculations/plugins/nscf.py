@@ -5,20 +5,21 @@ LastEditTime: 2021-04-18 16:58:56
 Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 '''
 
-from abacuskit.calculations.baseclass import ABACUSCalculation
-from abacuskit.calculations.structure import Stru, Kpt
-from abacuskit.utils.typings import *
-
 import glob
 import shutil
 from pathlib import Path
+
+from abacuskit.calculations.baseclass import ABACUSCalculation
+from abacuskit.calculations.structure import Kpt, Stru
+from abacuskit.utils.typings import *
+
 
 class NSCF(ABACUSCalculation):
     """NSCF calculation"""
 
     def __init__(self, input_dict: dict, stru: typing.Optional[Stru], kpt: typing.Optional[Kpt], **kwargs) -> None:
         """Set input parameters of nscf calcultion
-        
+
         :params input_dict: dict of input parameters
         :params stru: object of `abacuskit.calculations.structure.Stru`
         :params kpt: object of `abacuskit.calculations.structure.Kpt`
@@ -27,12 +28,13 @@ class NSCF(ABACUSCalculation):
         super().__init__(input_dict, stru, kpt, **kwargs)
         self.input_dict["calculation"] = "nscf"
 
+
 class BAND(NSCF):
     """Band calculation"""
 
-    def __init__(self, input_dict: dict, stru: typing.Optional[Stru], kpt: typing.Optional[Kpt], density_file: str_PathLike="", **kwargs) -> None:
+    def __init__(self, input_dict: dict, stru: typing.Optional[Stru], kpt: typing.Optional[Kpt], density_file: str_PathLike = "", **kwargs) -> None:
         """Set input parameters of band calcultion
-        
+
         :params input_dict: dict of input parameters
         :params stru: object of `abacuskit.calculations.structure.Stru`
         :params kpt: object of `abacuskit.calculations.structure.Kpt`
@@ -45,12 +47,13 @@ class BAND(NSCF):
 
     def _prepare(self, **kwargs):
         """Prepare input files for nscf calculation"""
-        
+
         super()._prepare(**kwargs)
-        
+
         # KPT check
         if self.kpt.mode != "Line":
-            raise Exception(f"The `KPT` file is not proper to band calculation")
+            raise Exception(
+                f"The `KPT` file is not proper to band calculation")
 
         # Density
         outdir = "OUT.test"
@@ -61,16 +64,17 @@ class BAND(NSCF):
 
     def _parse(self, **kwargs) -> dict:
         """parse output of nscf calculation
-        
+
         :return: if `BANDS_*.dat` exists, return {"band_file" : 1}. If not, raise FileNotFoundError
         """
-        
+
         res = {}
         outdir = "OUT.test"
         band = glob.glob(outdir+"/BANDS_*.dat")
         if band:
-            res["band_file"] = 1    # if `band_file` exists, set 1 for autotest check
+            # if `band_file` exists, set 1 for autotest check
+            res["band_file"] = 1
         else:
             raise FileNotFoundError(f"`BANDS_*.dat` is not found in {outdir}")
-        
+
         return res

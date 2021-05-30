@@ -8,6 +8,7 @@ Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 from abacuskit.schedulers.datastructure import NodeNumberJobResource
 from abacuskit.schedulers.schedulers import Scheduler
 
+
 class PbsJobResource(NodeNumberJobResource):
     """Class for PBS job resources."""
 
@@ -34,12 +35,15 @@ class PbsJobResource(NodeNumberJobResource):
 
         elif resources['num_cores_per_mpiproc'] is not None:
             if resources['num_cores_per_mpiproc'] < 1:
-                raise ValueError('num_cores_per_mpiproc must be greater than or equal to one.')
-            
+                raise ValueError(
+                    'num_cores_per_mpiproc must be greater than or equal to one.')
+
             # In this plugin we never used num_cores_per_mpiproc so if it is not defined it is OK.
-            resources['num_cores_per_machine'] = (resources['num_cores_per_mpiproc'] * resources['num_mpiprocs_per_machine'])
+            resources['num_cores_per_machine'] = (
+                resources['num_cores_per_mpiproc'] * resources['num_mpiprocs_per_machine'])
 
         return resources
+
 
 class PbsBaseClass(Scheduler):
     """Base class with support for the PBSPro scheduler
@@ -59,11 +63,12 @@ class PbsBaseClass(Scheduler):
         * num_cores_per_machine
         * max_memory_kb
         * max_wallclock_seconds
-        
+
         This is done in an external function because it may change in
         different subclasses.
         """
-        raise NotImplementedError('Implement the _get_resource_lines in each subclass!')
+        raise NotImplementedError(
+            'Implement the _get_resource_lines in each subclass!')
 
     def _get_submit_script_header(self, job_tmpl):
         """
@@ -76,12 +81,12 @@ class PbsBaseClass(Scheduler):
         lines = []
         if job_tmpl.submit_as_hold:
             lines.append('#PBE -h')
-        
+
         if job_tmpl.rerunnable:
             lines.append('#PBE -r y')
         else:
             lines.append('#PBE -r n')
-        
+
         if job_tmpl.email:
             lines.append(f'#PBE -M {job_tmpl.email}')
 
@@ -107,7 +112,7 @@ class PbsBaseClass(Scheduler):
                 job_title = f'j{job_title}'
             job_title = job_title[:15]
             lines.append(f'#PBS -N {job_title}')
-        
+
         if job_tmpl.import_sys_environment:
             lines.append('#PBS -V')
 
@@ -141,7 +146,8 @@ class PbsBaseClass(Scheduler):
             lines.append(f'#PBS -p {job_tmpl.priority}')
 
         if not job_tmpl.job_resource:
-            raise ValueError('Job resources (as the num_machines) are required for the PBSPro scheduler plugin')
+            raise ValueError(
+                'Job resources (as the num_machines) are required for the PBSPro scheduler plugin')
 
         resource_lines = self._get_resource_lines(
             num_machines=job_tmpl.job_resource['num_machines'],
@@ -160,7 +166,8 @@ class PbsBaseClass(Scheduler):
             lines.append(empty_line)
             lines.append('# ENVIRONMENT VARIABLES BEGIN ###')
             if not isinstance(job_tmpl.job_environment, dict):
-                raise ValueError('If you provide job_environment, it must be a dictionary')
+                raise ValueError(
+                    'If you provide job_environment, it must be a dictionary')
             for key, value in job_tmpl.job_environment.items():
                 lines.append(f'export {key.strip()}={value}')
             lines.append('# ENVIRONMENT VARIABLES  END  ###')

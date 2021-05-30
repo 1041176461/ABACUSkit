@@ -5,8 +5,8 @@ LastEditTime: 2021-04-23 16:47:57
 Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 '''
 
-from abacuskit.schedulers.schedulers import Scheduler
 from abacuskit.schedulers.datastructure import NodeNumberJobResource
+from abacuskit.schedulers.schedulers import Scheduler
 
 
 class SlurmJobResource(NodeNumberJobResource):
@@ -15,7 +15,7 @@ class SlurmJobResource(NodeNumberJobResource):
     @classmethod
     def validate_resources(cls, **kwargs):
         """Validate the resources against the job resource class of this scheduler.
-        
+
         This extends the base class validator to check that the `num_cores_per_machine` are a multiple of
         `num_cores_per_mpiproc` and/or `num_mpiprocs_per_machine`.
 
@@ -35,17 +35,21 @@ class SlurmJobResource(NodeNumberJobResource):
 
         elif resources["num_cores_per_machine"] is not None:
             if resources["num_cores_per_machine"] < 1:
-                raise ValueError('num_cores_per_machine must be greater than or equal to one.')
+                raise ValueError(
+                    'num_cores_per_machine must be greater than or equal to one.')
 
-            resources["num_cores_per_mpiproc"] = (resources["num_cores_per_machine"] / resources["num_mpiprocs_per_machine"])
+            resources["num_cores_per_mpiproc"] = (
+                resources["num_cores_per_machine"] / resources["num_mpiprocs_per_machine"])
             if int(resources["num_cores_per_mpiproc"]) != resources["num_cores_per_mpiproc"]:
                 raise ValueError(
                     '`num_cores_per_machine` must be equal to `num_cores_per_mpiproc * num_mpiprocs_per_machine` and in'
                     ' particular it should be a multiple of `num_cores_per_mpiproc` and/or `num_mpiprocs_per_machine`'
                 )
-            resources["num_cores_per_mpiproc"] = int(resources["num_cores_per_mpiproc"])
+            resources["num_cores_per_mpiproc"] = int(
+                resources["num_cores_per_mpiproc"])
 
         return resources
+
 
 class SlurmScheduler(Scheduler):
     """
@@ -61,7 +65,7 @@ class SlurmScheduler(Scheduler):
 
         empty_line = ''
 
-        lines=[]
+        lines = []
         if job_tmpl.submit_as_hold:
             lines.append('#SBATCH -H')
 
@@ -127,14 +131,18 @@ class SlurmScheduler(Scheduler):
             lines.append(f'#SBATCH --nice={job_tmpl.priority}')
 
         if not job_tmpl.job_resource:
-            raise ValueError('Job resources (as the num_machines) are required for the SLURM scheduler plugin')
+            raise ValueError(
+                'Job resources (as the num_machines) are required for the SLURM scheduler plugin')
 
-        lines.append(f'#SBATCH --nodes={job_tmpl.job_resource["num_machines"]}')
+        lines.append(
+            f'#SBATCH --nodes={job_tmpl.job_resource["num_machines"]}')
         if job_tmpl.job_resource["num_mpiprocs_per_machine"]:
-            lines.append(f'#SBATCH --ntasks-per-node={job_tmpl.job_resource["num_mpiprocs_per_machine"]}')
+            lines.append(
+                f'#SBATCH --ntasks-per-node={job_tmpl.job_resource["num_mpiprocs_per_machine"]}')
 
         if job_tmpl.job_resource["num_cores_per_mpiproc"]:
-            lines.append(f'#SBATCH --cpus-per-task={job_tmpl.job_resource["num_cores_per_mpiproc"]}')
+            lines.append(
+                f'#SBATCH --cpus-per-task={job_tmpl.job_resource["num_cores_per_mpiproc"]}')
 
         if job_tmpl.max_wallclock_seconds is not None:
             try:
@@ -154,9 +162,11 @@ class SlurmScheduler(Scheduler):
             minutes = tot_minutes // 60
             seconds = tot_minutes % 60
             if days == 0:
-                lines.append(f'#SBATCH --time={hours:02d}:{minutes:02d}:{seconds:02d}')
+                lines.append(
+                    f'#SBATCH --time={hours:02d}:{minutes:02d}:{seconds:02d}')
             else:
-                lines.append(f'#SBATCH --time={days:d}-{hours:02d}:{minutes:02d}:{seconds:02d}')
+                lines.append(
+                    f'#SBATCH --time={days:d}-{hours:02d}:{minutes:02d}:{seconds:02d}')
 
         # It is the memory per node, not per cpu!
         if job_tmpl.max_memory_kb:
@@ -180,7 +190,8 @@ class SlurmScheduler(Scheduler):
             lines.append(empty_line)
             lines.append('# ENVIRONMENT VARIABLES BEGIN ###')
             if not isinstance(job_tmpl.job_environment, dict):
-                raise ValueError('If you provide job_environment, it must be a dictionary')
+                raise ValueError(
+                    'If you provide job_environment, it must be a dictionary')
             for key, value in job_tmpl.job_environment.items():
                 lines.append(f'export {key.strip()}={value}')
             lines.append('# ENVIRONMENT VARIABLES  END  ###')

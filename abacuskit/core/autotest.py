@@ -5,21 +5,23 @@ LastEditTime: 2021-04-28 18:03:09
 Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 '''
 
-from abacuskit.schedulers.data import Code
-from abacuskit.utils.typings import *
-from abacuskit.calculations.structure import *
-from abacuskit.utils.IO import read_stru, read_kpt
-
-import re
-import os
 import json
-from pathlib import Path
+import os
+import re
 from collections import OrderedDict
+from pathlib import Path
+
+from abacuskit.calculations.structure import *
+from abacuskit.schedulers.data import Code
+from abacuskit.utils.IO import read_kpt, read_stru
+from abacuskit.utils.typings import *
+
 
 def set_cal(name: str, input_dict: dict, stru: Stru, kpt: Kpt, **kwargs):
     module, cal = name.split('.')
     exec(f"""from abacuskit.calculations.plugins.{module} import {cal}""")
     return eval(f"{cal}(input_dict=input_dict, stru=stru, kpt=kpt, **{kwargs})")
+
 
 def configure(config_file: str_PathLike, version: list) -> Return_2:
     """Configure commands and workflow for Autotest
@@ -27,7 +29,7 @@ def configure(config_file: str_PathLike, version: list) -> Return_2:
     :params config_file: configure file for Autotest
     :params version: list of absolute path of executable file
     """
-    
+
     workflow = []
     allcommands = []
     with open(config_file, 'r') as file:
@@ -43,18 +45,18 @@ def configure(config_file: str_PathLike, version: list) -> Return_2:
             code = cal_elem.pop("code", None)
             cmdline_params = code.pop("cmdline_params", [])
             stdin_name = code.pop("stdin_name", None)
-            join_files=code.pop("join_files", False)
-            withmpi=code.pop("withmpi", "mpirun")
+            join_files = code.pop("join_files", False)
+            withmpi = code.pop("withmpi", "mpirun")
             commands = []
             for j, ver in enumerate(version):
                 commands.append(Code(code_name=ver,
-                                    cmdline_params=cmdline_params, 
-                                    stdin_name=stdin_name, 
-                                    stdout_name=f"{cal}.log", 
-                                    stderr_name=f"{cal}.err",
-                                    join_files=join_files,
-                                    withmpi=withmpi
-                                    ))
+                                     cmdline_params=cmdline_params,
+                                     stdin_name=stdin_name,
+                                     stdout_name=f"{cal}.log",
+                                     stderr_name=f"{cal}.err",
+                                     join_files=join_files,
+                                     withmpi=withmpi
+                                     ))
             allcommands.append(commands)
             input_dict = cal_elem.pop("input_params", None)
 
@@ -76,12 +78,15 @@ def configure(config_file: str_PathLike, version: list) -> Return_2:
             else:
                 kpt = None
 
-            obj = set_cal(name=name, input_dict=input_dict, stru=stru, kpt=kpt, **cal_elem)
+            obj = set_cal(name=name, input_dict=input_dict,
+                          stru=stru, kpt=kpt, **cal_elem)
             workflow.append(obj)
         else:
-            raise KeyError("Wrong keyword `cal` settings, it should be set in numerical order.")
-            
+            raise KeyError(
+                "Wrong keyword `cal` settings, it should be set in numerical order.")
+
     return allcommands, workflow
+
 
 class Autotest:
     """Auto-test for ABACUS"""
@@ -94,9 +99,9 @@ class Autotest:
 
         self.workflow = workflow
 
-    def calculate(self, command: Command, external_command: Command="", save_files: bool=False) -> dict:
+    def calculate(self, command: Command, external_command: Command = "", save_files: bool = False) -> dict:
         """The whole process of auto-test
-        
+
         :params command: string of command line or `abacuskit.schedulers.data.Code` object.
         :params external_command: other non-ABACUS code needed. Default: ""
         :params save_files: save input files of last calculation or not. Default: False
@@ -108,13 +113,14 @@ class Autotest:
             else:
                 save_dir = ""
             print(f"Begin {cal.__str__()}", flush=True)
-            res = cal.calculate(command=command, index=index, external_command=external_command, save_dir=save_dir)
+            res = cal.calculate(command=command, index=index,
+                                external_command=external_command, save_dir=save_dir)
             print(f"End {cal.__str__()}", flush=True)
         return res
 
-    def compare(self, commands: List_Command, external_command: Command="", save_files: bool=False):
+    def compare(self, commands: List_Command, external_command: Command = "", save_files: bool = False):
         """Comparison test between different commands
-        
+
         :params commands: list of commands string or `abacuskit.schedulers.data.Code` object
         :params external_command: other non-ABACUS code needed Default: ""
         :params save_files: save input files of last calculation or not. Default: False
@@ -132,19 +138,22 @@ class Autotest:
                     save_dir = f"cal_{index}"
                 else:
                     save_dir = ""
-                res[f"command_{j}"] = cal.calculate(command=command, index=index, external_command=external_command, save_dir=save_dir)
+                res[f"command_{j}"] = cal.calculate(
+                    command=command, index=index, external_command=external_command, save_dir=save_dir)
                 os.chdir("../")
             print(f"End {cal.__str__()}", flush=True)
             self._check(res)
-    
+
     def _check(self, res: dict):
         for index, version in enumerate(res.items()):
             value_version = version[1]
             if index >= 1:
                 for key in value_version.keys():
                     if abs(res[f"command_{index}"][key]-res[f"command_{index-1}"][key]) > 1e-8:
-                        raise Exception(f"The `{key}` of Version_{index-1} and Version_{index} are different.")
+                        raise Exception(
+                            f"The `{key}` of Version_{index-1} and Version_{index} are different.")
                     else:
-                        print(f"The `{key}` of Version_{index-1} and Version_{index} are same.", flush=True)
+                        print(
+                            f"The `{key}` of Version_{index-1} and Version_{index} are same.", flush=True)
             else:
                 print(f"Only one version calculated.", flush=True)

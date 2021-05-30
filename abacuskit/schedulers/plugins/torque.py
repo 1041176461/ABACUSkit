@@ -6,6 +6,7 @@ Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 '''
 from .pbsbaseclasses import PbsBaseClass
 
+
 class TorqueScheduler(PbsBaseClass):
     """
     Subclass to support the Torque scheduler..

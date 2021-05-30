@@ -8,6 +8,7 @@ Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 from abacuskit.schedulers.datastructure import JobResource
 from abacuskit.schedulers.schedulers import Scheduler
 
+
 class LsfJobResource(JobResource):
     """
     An implementation of JobResource for LSF, that supports
@@ -40,7 +41,8 @@ class LsfJobResource(JobResource):
         try:
             resources["tot_num_mpiprocs"] = int(kwargs.pop('tot_num_mpiprocs'))
         except (KeyError, ValueError):
-            raise TypeError('tot_num_mpiprocs must be specified and must be an integer')
+            raise TypeError(
+                'tot_num_mpiprocs must be specified and must be an integer')
 
         if resources["tot_num_mpiprocs"] <= 0:
             raise ValueError('tot_num_mpiprocs must be >= 1')
@@ -54,11 +56,13 @@ class LsfJobResource(JobResource):
         """
         self.resources = self.validate_resources(**kwargs)
 
+
 class LsfScheduler(Scheduler):
     """
     Support for the IBM LSF scheduler
     'https://www-01.ibm.com/support/knowledgecenter/SSETD4_9.1.2/lsf_welcome.html'
     """
+
     def _get_submit_script_header(self, job_tmpl):
         """
         Return the submit script header. See the following manual
@@ -66,9 +70,9 @@ class LsfScheduler(Scheduler):
         for more details about the possible options to bsub, in particular for
         the parallel environment definition (with the -m option).
         """
-        
-        import string
+
         import re
+        import string
 
         empty_line = ''
 
@@ -128,7 +132,8 @@ class LsfScheduler(Scheduler):
             lines.append(f'#BSUB -sp {job_tmpl.priority}')
 
         if not job_tmpl.job_resource:
-            raise ValueError('Job resources (as the tot_num_mpiprocs) are required for the LSF scheduler plugin')
+            raise ValueError(
+                'Job resources (as the tot_num_mpiprocs) are required for the LSF scheduler plugin')
 
         lines.append(f'#BSUB -n {job_tmpl.job_resource["tot_num_mpiprocs"]}')
         # Note:  make sure that PARALLEL_SCHED_BY_SLOT=Y is NOT
@@ -178,7 +183,8 @@ class LsfScheduler(Scheduler):
             lines.append(empty_line)
             lines.append('# ENVIRONMENT VARIABLES BEGIN ###')
             if not isinstance(job_tmpl.job_environment, dict):
-                raise ValueError('If you provide job_environment, it must be a dictionary')
+                raise ValueError(
+                    'If you provide job_environment, it must be a dictionary')
             for key, value in job_tmpl.job_environment.items():
                 lines.append(f'export {key.strip()}={value}')
             lines.append('# ENVIRONMENT VARIABLES END  ###')

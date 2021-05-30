@@ -5,21 +5,22 @@ LastEditTime: 2021-04-29 23:32:04
 Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 '''
 
-from abacuskit.calculations.baseclass import JobCalculation
-from abacuskit.utils.tools import folder_name, list_elem2str, get_input_line
-from abacuskit.utils.IO import read_json
-from abacuskit.calculations.structure import Stru
-from abacuskit.schedulers.data import Code
-from abacuskit.utils.typings import *
-from abacuskit.calculations.plugins.dis import distance
-
-import os
 import glob
 import json
-import textwrap
+import os
 import shutil
-import numpy as np
+import textwrap
 from pathlib import Path
+
+import numpy as np
+from abacuskit.calculations.baseclass import JobCalculation
+from abacuskit.calculations.plugins.dis import distance
+from abacuskit.calculations.structure import Stru
+from abacuskit.schedulers.data import Code
+from abacuskit.utils.IO import read_json
+from abacuskit.utils.tools import folder_name, get_input_line, list_elem2str
+from abacuskit.utils.typings import *
+
 
 def gen_config(element:str, nbands:int, ref_band:int, rcut:float, Nu:list, pps_file:str, cal_T:bool=True, cal_smooth:bool=True, sigma:float=0.01, ecutwfc:int=100, cmdline_params:list=["-n 4", "-env OMP_NUM_THREADS=1"], withmpi:list="mpirun", target:int=1, count:int=1, Dir:str_PathLike="./"):
     """Get config.json for orbitals optimization

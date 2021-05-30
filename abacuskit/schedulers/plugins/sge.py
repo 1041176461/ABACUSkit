@@ -5,11 +5,13 @@ LastEditTime: 2021-04-23 16:47:37
 Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 '''
 
-from abacuskit.schedulers.schedulers import Scheduler
 from abacuskit.schedulers.datastructure import ParEnvJobResource
+from abacuskit.schedulers.schedulers import Scheduler
+
 
 class SgeJobResource(ParEnvJobResource):
     pass
+
 
 class SgeScheduler(Scheduler):
     """
@@ -106,9 +108,11 @@ class SgeScheduler(Scheduler):
             lines.append(f'#$ -p {job_tmpl.priority}')
 
         if not job_tmpl.job_resource:
-            raise ValueError('Job resources (as the tot_num_mpiprocs) are required for the SGE scheduler plugin')
+            raise ValueError(
+                'Job resources (as the tot_num_mpiprocs) are required for the SGE scheduler plugin')
         # Setting up the parallel environment
-        lines.append(f'#$ -pe {str(job_tmpl.job_resource["parallel_env"])} {int(job_tmpl.job_resource["tot_num_mpiprocs"])}')
+        lines.append(
+            f'#$ -pe {str(job_tmpl.job_resource["parallel_env"])} {int(job_tmpl.job_resource["tot_num_mpiprocs"])}')
 
         if job_tmpl.max_wallclock_seconds is not None:
             try:
@@ -134,7 +138,8 @@ class SgeScheduler(Scheduler):
             lines.append(empty_line)
             lines.append('# ENVIRONMENT VARIABLES BEGIN ###')
             if not isinstance(job_tmpl.job_environment, dict):
-                raise ValueError('If you provide job_environment, it must be a dictionary')
+                raise ValueError(
+                    'If you provide job_environment, it must be a dictionary')
             for key, value in job_tmpl.job_environment.items():
                 lines.append(f'export {key.strip()}={value}')
             lines.append('# ENVIRONMENT VARIABLES  END  ###')

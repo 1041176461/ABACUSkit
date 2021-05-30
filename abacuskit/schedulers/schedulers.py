@@ -5,9 +5,10 @@ LastEditTime: 2021-04-28 14:39:14
 Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 '''
 
+import abc
+
 from abacuskit.schedulers.data import CodeRunMode, JobDefaultFields
 
-import abc
 
 class Scheduler(abc.ABC):
 
@@ -36,8 +37,9 @@ class Scheduler(abc.ABC):
         if job_tmpl.prepend_text:
             script_lines.append(job_tmpl.prepend_text)
             script_lines.append(empty_line)
-        
-        script_lines.append(self._get_run_line(job_tmpl.codes_info, job_tmpl.codes_run_mode))
+
+        script_lines.append(self._get_run_line(
+            job_tmpl.codes_info, job_tmpl.codes_run_mode))
         script_lines.append(empty_line)
 
         if job_tmpl.append_text:
@@ -81,7 +83,7 @@ class Scheduler(abc.ABC):
     @abc.abstractmethod
     def _get_submit_command(self, submit_script):
         """Return the string to execute to submit a given script.
-        
+
         :param submit_script: the path of the submit script relative to the working directory.
         :return: the string to execute to submit a given script.
         """

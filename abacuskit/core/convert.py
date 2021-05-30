@@ -5,20 +5,21 @@ LastEditTime: 2021-05-24 16:22:09
 Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 '''
 
-from abacuskit.utils.IO import read_json, read_stru
-from abacuskit.calculations.structure import Stru
-from abacuskit.utils.typings import *
-from abacuskit.utils.tools import list_elem2str, list_elem_2float
-from abacuskit.utils.constants import BOHR_TO_A
-
 import re
 from pathlib import Path
+
+from abacuskit.calculations.structure import Stru
+from abacuskit.utils.constants import BOHR_TO_A
+from abacuskit.utils.IO import read_json, read_stru
+from abacuskit.utils.tools import list_elem2str, list_elem_2float
+from abacuskit.utils.typings import *
+
 
 class Convert:
     """Convert file from one format to another"""
 
     @classmethod
-    def POSCAR_to_STRU(cls, srcfile:str_PathLike, tofile:str_PathLike="STRU", pps:Dict_str_str={}, orbitals:Dict_str_str={}, masses:Dict_str_float={}, magmoms:Dict_str_float={}, move:Dict_str_int={}, abfs:Dict_str_str={}) -> None:
+    def POSCAR_to_STRU(cls, srcfile: str_PathLike, tofile: str_PathLike = "STRU", pps: Dict_str_str = {}, orbitals: Dict_str_str = {}, masses: Dict_str_float = {}, magmoms: Dict_str_float = {}, move: Dict_str_int = {}, abfs: Dict_str_str = {}) -> None:
         """Convert POSCAR of VASP to STRU of ABACUS
 
         :params srcfile: str_PathLike, source file
@@ -56,18 +57,19 @@ class Convert:
                 elif ctype == "Cartesian":
                     positions[j] = R_tmp
 
-        stru = Stru(lat0, cell, pps, positions=positions, scaled_positions=scaled_positions, orbitals=orbitals, masses=masses, magmoms=magmoms, move=move, abfs=abfs)
+        stru = Stru(lat0, cell, pps, positions=positions, scaled_positions=scaled_positions,
+                    orbitals=orbitals, masses=masses, magmoms=magmoms, move=move, abfs=abfs)
         stru.write_stru(tofile)
 
     @classmethod
-    def STRU_to_POSCAR(cls, srcfile:str_PathLike, tofile:str_PathLike, ntype:int) -> Stru:
+    def STRU_to_POSCAR(cls, srcfile: str_PathLike, tofile: str_PathLike, ntype: int) -> Stru:
         """Convert POSCAR of VASP to STRU of ABACUS
-        
+
         :params srcfile: str_PathLike, source file
         :params tofile: str_PathLike, converted file
         """
 
-        def convert_pos(elements:list, positions:dict):
+        def convert_pos(elements: list, positions: dict):
             newpos = []
             for elem in elements:
                 for pos in positions[elem]:
@@ -83,7 +85,8 @@ class Convert:
         line.append(' '+''.ljust(10).join(list_elem2str(stru.numbers.values())))
         line.append(stru._ctype)
         if stru._ctype == "Direct":
-            line.append('\n'.join(convert_pos(stru.elements, stru.scaled_positions)))
+            line.append('\n'.join(convert_pos(
+                stru.elements, stru.scaled_positions)))
         if stru._ctype == "Cartesian":
             line.append('\n'.join(convert_pos(stru.elements, stru.positions)))
         else:
@@ -107,9 +110,11 @@ class Convert:
             text = read_json(args.file)
             srcfile = text["srcfile"]
             if Path(srcfile).name == "POSCAR" or Path(srcfile).suffix in [".vasp", ".poscar", ".VASP"]:
-                pps, orbitals, masses, magmoms, move, abfs = cls._init_for_convert_STRU(text)
+                pps, orbitals, masses, magmoms, move, abfs = cls._init_for_convert_STRU(
+                    text)
                 tofile = text.pop("tofile", "STRU")
-                Convert().POSCAR_to_STRU(srcfile, tofile, pps, orbitals, masses, magmoms, move, abfs)
+                Convert().POSCAR_to_STRU(srcfile, tofile, pps,
+                                         orbitals, masses, magmoms, move, abfs)
             elif re.match("STRU*", Path(srcfile).name):
                 ntype = text["ntype"]
                 tofile = text.pop("tofile", "POSCAR")

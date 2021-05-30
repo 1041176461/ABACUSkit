@@ -8,8 +8,10 @@ Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 from abacuskit.schedulers.datastructure import NodeNumberJobResource
 from abacuskit.schedulers.schedulers import Scheduler
 
+
 class DirectJobResource(NodeNumberJobResource):
     pass
+
 
 class DirectScheduler(Scheduler):
     """
@@ -29,7 +31,8 @@ class DirectScheduler(Scheduler):
 
         if job_tmpl.sched_join_files:
             if job_tmpl.sched_error_path:
-                print('sched_join_files is True, but sched_error_path is set; ignoring sched_error_path', flush=True)
+                print(
+                    'sched_join_files is True, but sched_error_path is set; ignoring sched_error_path', flush=True)
         else:
             if job_tmpl.sched_error_path:
                 lines.append(f'exec 2> {job_tmpl.sched_error_path}')
@@ -58,7 +61,8 @@ class DirectScheduler(Scheduler):
             lines.append(empty_line)
             lines.append('# ENVIRONMENT VARIABLES BEGIN ###')
             if not isinstance(job_tmpl.job_environment, dict):
-                raise ValueError('If you provide job_environment, it must be a dictionary')
+                raise ValueError(
+                    'If you provide job_environment, it must be a dictionary')
             for key, value in job_tmpl.job_environment.items():
                 lines.append(f'export {key.strip()}={value}')
             lines.append('# ENVIRONMENT VARIABLES  END  ###')
