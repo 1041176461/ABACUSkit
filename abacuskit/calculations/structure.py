@@ -286,8 +286,8 @@ class Stru:
         cb['_cell_angle_gamma'] = math.acos(
             np.dot(self.cell[0], self.cell[1])/(la*lb))/math.pi*180
 
+        from abacuskit.postprocess.symmetry import Spacegroup
         if find_symmetry:
-            from abacuskit.postprocess.symmetry import Spacegroup
             from spglib import get_symmetry_dataset
             dataset = get_symmetry_dataset(spgcell)
             if dataset:
