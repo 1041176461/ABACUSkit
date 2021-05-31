@@ -7,5 +7,6 @@
     "orbitals" : {
         "Cu" : "dpsi_Cu.dat",
         "O" : "dpsi_O.dat"
-    }
+    },
+    "convert" : "vasp_to_stru"
 }

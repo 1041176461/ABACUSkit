@@ -9,7 +9,6 @@ from collections import defaultdict
 from typing import Counter, Dict, OrderedDict, Tuple, Union
 
 import numpy as np
-import seekpath
 import spglib
 from abacuskit.calculations.structure import Kpt, Stru
 from abacuskit.utils.constants import BOHR_TO_A, CrySysNumber
@@ -136,7 +135,8 @@ class Spacegroup:
         :params symprec: distance tolerance in Cartesian coordinates to find crystal symmetry. Default: 1e-5
         :params angle_tolerance: tolerance of angle between basis vectors in degrees to be tolerated in the symmetry finding. Default: -1
         """
-
+        import seekpath
+        
         if numbers:
             set_already = True
         else:

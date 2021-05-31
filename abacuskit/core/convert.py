@@ -6,11 +6,10 @@ Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 '''
 
 import re
-from pathlib import Path
 
 from abacuskit.calculations.structure import Stru
 from abacuskit.utils.constants import BOHR_TO_A
-from abacuskit.utils.IO import read_json, read_stru
+from abacuskit.utils.IO import read_cif, read_json, read_stru
 from abacuskit.utils.tools import list_elem2str, list_elem_2float
 from abacuskit.utils.typings import *
 
@@ -62,8 +61,8 @@ class Convert:
         stru.write_stru(tofile)
 
     @classmethod
-    def STRU_to_POSCAR(cls, srcfile: str_PathLike, tofile: str_PathLike, ntype: int) -> Stru:
-        """Convert POSCAR of VASP to STRU of ABACUS
+    def STRU_to_POSCAR(cls, srcfile: str_PathLike, tofile: str_PathLike, ntype: int) -> None:
+        """Convert STRU of ABACUS to POSCAR of VASP
 
         :params srcfile: str_PathLike, source file
         :params tofile: str_PathLike, converted file
@@ -95,6 +94,35 @@ class Convert:
             file.write('\n'.join(line))
 
     @classmethod
+    def CIF_to_STRU(cls, srcfile: str_PathLike, tofile: str_PathLike = "STRU", pps: Dict_str_str = {}, orbitals: Dict_str_str = {}, masses: Dict_str_float = {}, magmoms: Dict_str_float = {}, move: Dict_str_int = {}, abfs: Dict_str_str = {}) -> None:
+        """Convert CIF(Crystallographic Information Framework) to STRU of ABACUS
+
+        :params srcfile: str_PathLike, source file
+        :params tofile: str_PathLike, converted file
+        :params pps: dict, dict of pseudopotential file. 
+        :params orbitals: dict, dict of orbital file. 
+        :params masses: dict, dict of atomic mass. 
+        :params magmoms: dict, dict of magnetic moment. 
+        :params move: dict, key is element name and value is list of 1 or 0, `1` means atom can move. 
+        :params abfs: dict, dict of ABFs for hybrid functional calculation.
+        """
+
+        stru = read_cif(srcfile, [pps], [orbitals], [
+                        masses], [magmoms], [move], [abfs])[0]
+        stru.write_stru(tofile)
+
+    @classmethod
+    def STRU_to_CIF(cls, srcfile: str_PathLike, tofile: str_PathLike, ntype: int, find_symmetry: bool = False) -> None:
+        """Convert STRU of ABACUS to CIF(Crystallographic Information Framework)
+
+        :params srcfile: str_PathLike, source file
+        :params tofile: str_PathLike, converted file
+        """
+
+        stru = read_stru(ntype, srcfile)
+        stru.write_cif(tofile, find_symmetry)
+
+    @classmethod
     def _init_for_convert_STRU(cls, text):
         pps = text.pop("pps", {})
         orbitals = text.pop("orbitals", {})
@@ -109,13 +137,24 @@ class Convert:
         if args.file:
             text = read_json(args.file)
             srcfile = text["srcfile"]
-            if Path(srcfile).name == "POSCAR" or Path(srcfile).suffix in [".vasp", ".poscar", ".VASP"]:
+            convert = text["convert"]
+            if convert == "poscar_to_stru":
                 pps, orbitals, masses, magmoms, move, abfs = cls._init_for_convert_STRU(
                     text)
                 tofile = text.pop("tofile", "STRU")
                 Convert().POSCAR_to_STRU(srcfile, tofile, pps,
                                          orbitals, masses, magmoms, move, abfs)
-            elif re.match("STRU*", Path(srcfile).name):
+            elif convert == "cif_to_stru":
+                pps, orbitals, masses, magmoms, move, abfs = cls._init_for_convert_STRU(
+                    text)
+                tofile = text.pop("tofile", "STRU")
+                Convert().CIF_to_STRU(srcfile, tofile, pps,
+                                      orbitals, masses, magmoms, move, abfs)
+            elif convert == "stru_to_poscar":
                 ntype = text["ntype"]
                 tofile = text.pop("tofile", "POSCAR")
                 Convert().STRU_to_POSCAR(srcfile, tofile, ntype)
+            elif convert == "stru_to_cif":
+                ntype = text["ntype"]
+                tofile = text.pop("tofile", "STRU.cif")
+                Convert().STRU_to_CIF(srcfile, tofile, ntype)
