@@ -62,7 +62,7 @@ class Show:
                                energy_range, blabel, color, outfile)
 
     @classmethod
-    def show_dosinfo(cls, tdosfile: str_PathLike = '', pdosfile: str_PathLike = '', efermi: float = 0, energy_range: Sequence[float] = [], dos_range: Sequence[float] = [], species: Union[Sequence[str], Dict[str, List[int]]] = [], tdosfig: str_PathLike = 'tdos.pdf', pdosfig: str_PathLike = 'pdos.pdf'):
+    def show_dosinfo(cls, tdosfile: str_PathLike = '', pdosfile: str_PathLike = '', efermi: float = 0, energy_range: Sequence[float] = [], dos_range: Sequence[float] = [], species: Union[Sequence[str], Dict[str, List[int]]] = [], tdosfig: str_PathLike = 'tdos.pdf', pdosfig: str_PathLike = 'pdos.pdf', prec: float = 0.01):
         """Plot total dos or partial dos, if both `tdosfile` and `pdosfile` set, it will ony read `tdosfile`
 
         :params tdosfile: string of TDOS data file
@@ -71,12 +71,13 @@ class Show:
         :params energy_range: range of energy to plot, its length equals to two
         :params dos_range: range of dos to plot, its length equals to two
         :params species: list of atomic species or dict of atomic species and its angular momentum list
+        :params prec: dos below this value thought to be zero. Default: 0.01
         """
 
         from abacuskit.postprocess.plot import DosPlot
 
         DosPlot().plot(tdosfile, pdosfile, efermi, energy_range,
-                       dos_range, species, tdosfig, pdosfig)
+                       dos_range, species, tdosfig, pdosfig, prec)
 
     @classmethod
     def show_cmdline(cls, args):
@@ -106,5 +107,6 @@ class Show:
             species = text.pop("species", [])
             tdosfig = text.pop("tdosfig", "tdos.pdf")
             pdosfig = text.pop("pdosfig", "pdos.pdf")
+            prec = text.pop("prec", 0.01)
             cls.show_dosinfo(tdosfile, pdosfile, efermi,
-                             energy_range, dos_range, species, tdosfig, pdosfig)
+                             energy_range, dos_range, species, tdosfig, pdosfig, prec)

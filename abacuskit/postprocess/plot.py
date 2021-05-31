@@ -268,24 +268,27 @@ class DosPlot:
         return string
 
     @classmethod
-    def set_vcband(cls, energy: Sequence) -> Tuple[namedtuple, namedtuple]:
+    def set_vcband(cls, energy: Sequence, dos: Sequence, prec=0.01) -> Tuple[namedtuple, namedtuple]:
         """Separate valence and conduct band
 
         :params energy: band energy after subtracting the Fermi level
+        :params dos: density of state
+        :params prec: dos below this value thought to be zero. Default: 0.01
         """
 
         Band = namedtuple('Band', ['band', 'value'])
 
         # valance band
         band_vbm_index = np.where(energy <= 0)[0]
+        evbm = energy[np.where(dos[band_vbm_index] > prec)[0][-1]][0]
         band_vbm = energy[band_vbm_index]
-        evbm = np.max(band_vbm)
         vb = Band(band_vbm-evbm, evbm-evbm)
 
         # conduct band
         band_cbm_index = np.where(energy > 0)[0]
         band_cbm = energy[band_cbm_index]
-        ecbm = np.min(band_cbm)
+        ecbm = energy[np.where(dos[band_cbm_index] > prec)[
+            0][0]+band_cbm_index[0]][0]
         cb = Band(band_cbm-evbm, ecbm-evbm)
 
         return vb, cb
@@ -417,20 +420,22 @@ class DosPlot:
         ax.legend()
 
     @classmethod
-    def _tplot(cls, res: tuple, efermi: float = 0, energy_range: Sequence[float] = [], dos_range: Sequence[float] = []):
+    def _tplot(cls, res: tuple, efermi: float = 0, energy_range: Sequence[float] = [], dos_range: Sequence[float] = [], prec: float = 0.01):
 
         fig, ax = plt.subplots()
 
         nsplit = len(res)
         if nsplit == 2:
             energy, dos = res
-            vb, cb = cls.set_vcband(energy_minus_efermi(energy, efermi))
+            vb, cb = cls.set_vcband(
+                energy_minus_efermi(energy, efermi), dos, prec)
             energy = np.concatenate((vb.band, cb.band))
             ax.plot(energy, dos, lw=0.8, c='gray', linestyle='-', label='TDOS')
 
         elif nsplit == 3:
             energy, dos_up, dos_dw = res
-            vb, cb = cls.set_vcband(energy_minus_efermi(energy, efermi))
+            vb, cb = cls.set_vcband(
+                energy_minus_efermi(energy, efermi), dos_up, prec)
             energy = np.concatenate((vb.band, cb.band))
             dos_dw = -dos_dw
             ax.plot(energy, dos_up, lw=0.8, c='gray',
@@ -449,7 +454,7 @@ class DosPlot:
         return res, nsplit
 
     @classmethod
-    def plot(cls, tdosfile: str_PathLike = '', pdosfile: str_PathLike = '', efermi: float = 0, energy_range: Sequence[float] = [], dos_range: Sequence[float] = [], species: Union[Sequence[str], Dict[str, List[int]]] = [], tdosfig: str_PathLike = 'tdos.pdf', pdosfig: str_PathLike = 'pdos.pdf'):
+    def plot(cls, tdosfile: str_PathLike = '', pdosfile: str_PathLike = '', efermi: float = 0, energy_range: Sequence[float] = [], dos_range: Sequence[float] = [], species: Union[Sequence[str], Dict[str, List[int]]] = [], tdosfig: str_PathLike = 'tdos.pdf', pdosfig: str_PathLike = 'pdos.pdf', prec: float = 0.01):
         """Plot total dos or partial dos, if both `tdosfile` and `pdosfile` set, it will ony read `tdosfile`
 
         :params tdosfile: string of TDOS data file
@@ -458,13 +463,14 @@ class DosPlot:
         :params energy_range: range of energy to plot, its length equals to two
         :params dos_range: range of dos to plot, its length equals to two
         :params species: list of atomic species or dict of atomic species and its angular momentum list
+        :params prec: dos below this value thought to be zero. Default: 0.01
         """
 
         res = cls.read(tdosfile, pdosfile)
 
         if tdosfile:
             ax, energy_range, dos_range = cls._tplot(
-                res, efermi, energy_range, dos_range)
+                res, efermi, energy_range, dos_range, prec)
             cls._set_figure(ax, energy_range, dos_range)
             plt.savefig(tdosfig)
 
@@ -480,19 +486,20 @@ class DosPlot:
                 raise TypeError(
                     "Only when `pdosfile` and `species` are both set, it will plot PDOS.")
             energy, orbitals = res
-            vb, cb = cls.set_vcband(energy_minus_efermi(energy, efermi))
-            cls.info(vb, cb)
-            energy_f = np.concatenate((vb.band, cb.band))
 
             # TDOS
             dos, nsplit = cls._all_sum(orbitals)
+            vb, cb = cls.set_vcband(
+                energy_minus_efermi(energy, efermi), dos, prec)
+            cls.info(vb, cb)
+            energy_f = np.concatenate((vb.band, cb.band))
             if nsplit == 1:
                 ax, energy_range, dos_range = cls._tplot(
-                    (energy, dos), efermi, energy_range, dos_range)
+                    (energy, dos), efermi, energy_range, dos_range, prec)
             elif nsplit == 2:
                 dos_up, dos_dw = np.split(dos, nsplit, axis=1)
                 ax, energy_range, dos_range = cls._tplot(
-                    (energy, dos_up, dos_dw), efermi, energy_range, dos_range)
+                    (energy, dos_up, dos_dw), efermi, energy_range, dos_range, prec)
             for elem in elements:
                 dos = np.zeros_like(orbitals[0]["data"], dtype=np.float32)
                 for orb in orbitals:
