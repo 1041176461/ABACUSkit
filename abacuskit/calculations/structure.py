@@ -244,6 +244,22 @@ class Stru:
         with open(filename, 'w') as file:
             file.write(self.get_stru())
 
+    @property
+    def cellpar(self):
+        lattice = np.array(self.cell)*self.lat0 * BOHR_TO_A  # in Cartesian
+        la = np.linalg.norm(lattice[0])
+        lb = np.linalg.norm(lattice[1])
+        lc = np.linalg.norm(lattice[2])
+        
+        alpha = math.acos(
+            np.dot(self.cell[1], self.cell[2])/(lb*lc))/math.pi*180
+        beta = math.acos(
+            np.dot(self.cell[0], self.cell[2])/(la*lc))/math.pi*180
+        gamma = math.acos(
+            np.dot(self.cell[0], self.cell[1])/(la*lb))/math.pi*180
+        
+        return la, lb, lc, alpha, beta, gamma
+
     def get_cif(self, find_symmetry: bool = False):
         """ Get CIF format string
 
@@ -273,18 +289,7 @@ class Stru:
         from CifFile import CifBlock, CifFile
         cf = CifFile()
         cb = CifBlock()
-        la = np.linalg.norm(lattice[0])
-        lb = np.linalg.norm(lattice[1])
-        lc = np.linalg.norm(lattice[2])
-        cb['_cell_length_a'] = la
-        cb['_cell_length_b'] = lb
-        cb['_cell_length_c'] = lc
-        cb['_cell_angle_alpha'] = math.acos(
-            np.dot(self.cell[1], self.cell[2])/(lb*lc))/math.pi*180
-        cb['_cell_angle_beta'] = math.acos(
-            np.dot(self.cell[0], self.cell[2])/(la*lc))/math.pi*180
-        cb['_cell_angle_gamma'] = math.acos(
-            np.dot(self.cell[0], self.cell[1])/(la*lb))/math.pi*180
+        cb['_cell_length_a'], cb['_cell_length_b'], cb['_cell_length_c'], cb['_cell_angle_alpha'], cb['_cell_angle_beta'], cb['_cell_angle_gamma'] = self.cellpar
 
         from abacuskit.postprocess.symmetry import Spacegroup
         if find_symmetry:

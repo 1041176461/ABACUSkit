@@ -20,12 +20,15 @@ from abacuskit.utils.tools import (get_input_line,
 from abacuskit.utils.typings import *
 
 
+# TODO: should add symmetry operation(based on site symmetry or Wackoff positions) to modify atom positions 
 def read_cif(filename: str_PathLike, pps: muti_Dict = [{}], orbitals: muti_Dict = [{}], masses: muti_Dict = [{}], magmoms: muti_Dict = [{}], move: muti_Dict = [{}], abfs: muti_Dict = [{}]) -> List[Stru]:
     """Read CIF(Crystallographic Information Framework) file and return `Stru` object
 
     :params filename: name of cif file
     """
 
+    from warnings import UserWarning
+    raise UserWarning("Can only read direct positions, generating equivalent atoms based on site symmetry or Wackoff positions are not supported now")
     from CifFile import ReadCif
     strulist = []
 
