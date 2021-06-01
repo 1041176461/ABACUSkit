@@ -7,7 +7,6 @@ Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 
 import json
 import re
-import string
 from collections import defaultdict
 from typing import List
 
@@ -15,7 +14,7 @@ import numpy as np
 from abacuskit.calculations.structure import Kpt, Orb, Stru, conventional_cell
 from abacuskit.postprocess.symmetry import Spacegroup
 from abacuskit.utils.constants import BOHR_TO_A, Hall2Number, HM2Hall
-from abacuskit.utils.tools import (get_input_line, list_elem2strip,
+from abacuskit.utils.tools import (get_input_line,
                                    list_elem_2float, list_elem_2int,
                                    search_sentence, skip_notes)
 from abacuskit.utils.typings import *
@@ -35,6 +34,9 @@ def read_cif(filename: str_PathLike, pps: muti_Dict = [{}], orbitals: muti_Dict 
             return s.split('(')[0]
         return list(map(list_split, l))
 
+    def get_elements(string):
+        return re.search(r'([A-Z][a-z]?)', string).group(0)
+
     cf = ReadCif(filename)
     for index, name in enumerate(cf.keys()):
         data = cf[name]
@@ -42,9 +44,9 @@ def read_cif(filename: str_PathLike, pps: muti_Dict = [{}], orbitals: muti_Dict 
         fract_y = list_elem2split(data["_atom_site_fract_y"])
         fract_z = list_elem2split(data["_atom_site_fract_z"])
         if "_atom_site_type_symbol" in data.keys():
-            elements = data["_atom_site_type_symbol"]
+            elements = list(map(get_elements, data["_atom_site_type_symbol"]))
         else:
-            elements = list_elem2strip(data["_atom_site_label"], string.digits)
+            elements = list(map(get_elements, data["_atom_site_label"]))
         scaled_positions = defaultdict(list)
         for i, elem in enumerate(elements):
             scaled_positions[elem].append([np.array(fract_x[i], dtype=float), np.array(

@@ -112,7 +112,7 @@ def Cartesian_angstrom2Cartesian(positions: Dict_str_list) -> Dict_str_list:
 class Stru:
     """ABACUS `STRU` file information"""
 
-    def __init__(self, lat0: float, cell: list, pps: Dict_str_str, positions: Dict_str_list = {}, scaled_positions: Dict_str_list = {}, positions_angstrom_lat0: Dict_str_list = {}, orbitals: Dict_str_str = {}, masses: Dict_str_float = {}, magmoms: Dict_str_float = {}, move: Dict_str_int = {}, abfs: Dict_str_str = {}) -> None:
+    def __init__(self, lat0: float=1/BOHR_TO_A, cell: list=[], pps: Dict_str_str={}, positions: Dict_str_list = {}, scaled_positions: Dict_str_list = {}, positions_angstrom_lat0: Dict_str_list = {}, orbitals: Dict_str_str = {}, masses: Dict_str_float = {}, magmoms: Dict_str_float = {}, move: Dict_str_int = {}, abfs: Dict_str_str = {}) -> None:
         """Initialize Stru object
 
         :params lat0: float, lattice constant in unit bohr.
@@ -244,10 +244,10 @@ class Stru:
         with open(filename, 'w') as file:
             file.write(self.get_stru())
 
-    def write_cif(self, filename: str = "STRU.cif", find_symmetry: bool = False):
-        """write CIF file
+    def get_cif(self, find_symmetry: bool = False):
+        """ Get CIF format string
 
-        :params filename: absolute path of CIF file
+        :params find_symmetry: if use Spglib to find symmetry. Default: False
         """
 
         lattice = np.array(self.cell)*self.lat0 * BOHR_TO_A  # in Cartesian
@@ -291,35 +291,50 @@ class Stru:
             from spglib import get_symmetry_dataset
             dataset = get_symmetry_dataset(spgcell)
             if dataset:
+                cb['_atom_site_label'] = [self.elements[i] for i in dataset['std_types']]
+                cb['_atom_site_type_symbol'] = [f"{self.elements[i]}{i}" for i in dataset['std_types']]
                 number = dataset['number']
                 cb['_symmetry_cell_setting'] = Spacegroup(
                 ).get_crystal_system(number)
                 cb['_space_group_IT_number'] = number
                 cb['_space_group_name_H-M_alt'] = dataset['international']
                 cb['_space_group_name_Hall'] = dataset['hall']
+                x, y, z = np.split(dataset["std_positions"], 3, axis=1)
             else:
+                cb['_atom_site_label'] = label
+                cb['_atom_site_type_symbol'] = type_symbol
                 cb['_symmetry_cell_setting'] = Spacegroup().get_crystal_system(1)
                 cb['_space_group_IT_number'] = 1
                 cb['_space_group_name_H-M_alt'] = "P1"
                 cb['_space_group_name_Hall'] = "P 1"
+                x, y, z = np.split(np.array(positions), 3, axis=1)
         else:
+            cb['_atom_site_label'] = label
+            cb['_atom_site_type_symbol'] = type_symbol
             cb['_symmetry_cell_setting'] = Spacegroup().get_crystal_system(1)
             cb['_space_group_IT_number'] = 1
             cb['_space_group_name_H-M_alt'] = "P1"
             cb['_space_group_name_Hall'] = "P 1"
+            x, y, z = np.split(np.array(positions), 3, axis=1)
 
-        x, y, z = np.split(np.array(positions), 3, axis=1)
-
-        cb['_atom_site_label'] = label
-        cb['_atom_site_type_symbol'] = type_symbol
         cb['_atom_site_fract_x'], cb['_atom_site_fract_y'], cb['_atom_site_fract_z'] = x.flatten(
         ), y.flatten(), z.flatten()
         cb.CreateLoop(['_atom_site_label', '_atom_site_type_symbol',
-                      '_atom_site_fract_x', '_atom_site_fract_y', '_atom_site_fract_z'])
+                       '_atom_site_fract_x', '_atom_site_fract_y', '_atom_site_fract_z'])
+
+        cf['stru_to_cif'] = cb
+
+        return str(cf)
+
+    def write_cif(self, filename: str = "STRU.cif", fing_symmetry: bool = False):
+        """write CIF file
+
+        :params filename: absolute path of CIF file
+        :params find_symmetry: if use Spglib to find symmetry. Default: False
+        """
 
         with open(filename, 'w') as file:
-            cf['stru_to_cif'] = cb
-            file.write(str(cf))
+            file.write(self.get_cif(fing_symmetry))
 
     def supercell_positions(self, kpt: list) -> Dict_str_list:
         """Return supercell atomic positions
@@ -341,6 +356,19 @@ class Stru:
             R[pos] = np.concatenate(R_new)
 
         return R
+
+    @staticmethod
+    def positions_dict2list(positions:dict):
+        """Convert dict of positions to list
+        
+        :params positions: dict of positions, its keys are elements name and its values are positions
+        """        
+        new_positions = []
+        for elem in positions:
+            for pos in positions[elem]:
+                new_positions.append(pos)
+
+        return np.array(new_positions, dtype=float)
 
     @property
     def volume_bohr(self):

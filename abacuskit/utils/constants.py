@@ -45,6 +45,15 @@ def get_angular_momentum_index(label: str) -> int:
     elif label == 'f':
         return 3
 
+LatticeType = {
+    'P' : 'primitive',
+    'I' : 'body centering',   # h+k+l=2n
+    'F' : 'face centering',   # h,k,l all odd or even
+    'A' : 'single face centering',  # k+l=2n
+    'B' : 'single face centering',  # h+l=2n
+    'C' : 'single face centering',  # h+k=2n
+    'R' : 'rhombohedral centering'  # -h+k+l=3n (obverse); h-k+l=3n (reverse)
+}
 
 # Convert Hermann-Mauguin symbol to Hall symbol
 HM2Hall = {
