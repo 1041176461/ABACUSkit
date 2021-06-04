@@ -23,7 +23,7 @@ class SlurmJobResource(NodeNumberJobResource):
         :return: defaultdict with the parsed parameters populated
         :raises ValueError: if the resources are invalid or incomplete
         """
-        resources = super().validate_resources(**kwargs)
+        resources = super().validate_resources(cls, **kwargs)
 
         # In this plugin we never used num_cores_per_machine so if it is not defined it is OK.
         if resources["num_cores_per_machine"] is not None and resources["num_cores_per_mpiproc"] is not None:

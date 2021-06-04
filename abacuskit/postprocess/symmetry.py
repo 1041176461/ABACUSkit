@@ -1,7 +1,7 @@
 '''
 Date: 2021-05-12 20:44:55
 LastEditors: jiyuyang
-LastEditTime: 2021-05-12 20:44:55
+LastEditTime: 2021-06-04 10:00:50
 Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 '''
 
@@ -9,7 +9,6 @@ from collections import defaultdict
 from typing import Counter, Dict, OrderedDict, Tuple, Union
 
 import numpy as np
-import spglib
 from abacuskit.calculations.structure import Kpt, Stru
 from abacuskit.utils.constants import BOHR_TO_A, CrySysNumber
 
@@ -78,7 +77,8 @@ class Spacegroup:
         :params angle_tolerance: tolerance of angle between basis vectors in degrees to be tolerated in the symmetry finding. Default: -1
         :params symbol_type: 0 - International, 1 - Schoenflies
         """
-
+        
+        import spglib
         return spglib.get_spacegroup(self.spgcell, symprec, angle_tolerance, symbol_type)
 
     def get_symmetry(self, symprec: float = 1e-5, angle_tolerance: float = -1) -> Union[Dict[str, np.ndarray], None]:
@@ -89,6 +89,7 @@ class Spacegroup:
         :return dictionary with keys "rotation", "translation" and "equivalent_atoms"
         """
 
+        import spglib
         return spglib.get_symmetry(self.spgcell, symprec, angle_tolerance)
 
     def refine_cell(self, symprec: float = 1e-5, angle_tolerance: float = -1) -> Union[Stru, None]:
@@ -99,6 +100,7 @@ class Spacegroup:
         :return lattice, atomic scaled positions, and atomic numbersthat are symmetrized following space group type
         """
 
+        import spglib
         newcell = spglib.refine_cell(self.spgcell, symprec, angle_tolerance)
 
         return self.modified_stru(newcell)
@@ -111,6 +113,7 @@ class Spacegroup:
         :return lattice, atomic scaled positions, and atomic numbersthat are symmetrized following space group type
         """
 
+        import spglib
         newcell = spglib.find_primitive(self.spgcell, symprec, angle_tolerance)
 
         return self.modified_stru(newcell)
@@ -122,7 +125,8 @@ class Spacegroup:
         :params angle_tolerance: tolerance of angle between basis vectors in degrees to be tolerated in the symmetry finding. Default: -1
         :params hall_number: If a serial number of Hall symbol from 1 to 530 is given, the database corresponding to the Hall symbol is made.
         """
-
+        
+        import spglib
         return spglib.get_symmetry_dataset(self.spgcell, symprec, angle_tolerance, hall_number)
 
     def get_kpath(self, numbers: list = [], with_time_reversal: bool = True, recipe: str = 'hpkot', threshold: float = 1e-7, symprec: float = 1e-5, angle_tolerance: float = -1) -> Tuple[Stru, Kpt]:
@@ -136,7 +140,7 @@ class Spacegroup:
         :params angle_tolerance: tolerance of angle between basis vectors in degrees to be tolerated in the symmetry finding. Default: -1
         """
         import seekpath
-        
+
         if numbers:
             set_already = True
         else:

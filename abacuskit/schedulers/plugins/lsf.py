@@ -31,7 +31,7 @@ class LsfJobResource(JobResource):
     @classmethod
     def validate_resources(cls, **kwargs):
         """Validate the resources against the job resource class of this scheduler."""
-        resources = super().validate_resources(**kwargs)
+        resources = super().validate_resources(cls, **kwargs)
 
         try:
             resources["parallel_env"] = str(kwargs.pop('parallel_env', ''))

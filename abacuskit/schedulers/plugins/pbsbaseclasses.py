@@ -24,7 +24,7 @@ class PbsJobResource(NodeNumberJobResource):
         :return: defaultdict with the parsed parameters populated
         :raises ValueError: if the resources are invalid or incomplete
         """
-        resources = super().validate_resources(**kwargs)
+        resources = super().validate_resources(cls, **kwargs)
 
         if resources['num_cores_per_machine'] is not None and resources['num_cores_per_mpiproc'] is not None:
             if resources['num_cores_per_machine'] != resources['num_cores_per_mpiproc'] * resources['num_mpiprocs_per_machine']:
