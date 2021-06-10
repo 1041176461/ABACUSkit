@@ -108,7 +108,7 @@ class BandPlot:
         ax.legend(by_label.values(), by_label.keys())
 
     @classmethod
-    def plot(cls, x: Sequence, y: Sequence, index: Sequence, efermi: float = 0, energy_range: Sequence[float] = [], label: str = None, color: str = None, outfile: str_PathLike = 'band.pdf'):
+    def plot(cls, x: Sequence, y: Sequence, index: Sequence, efermi: float = 0, energy_range: Sequence[float] = [], label: str = None, color: str = None, outfile: str_PathLike = 'band.png'):
         """Plot band structure
 
         :params x, y: x-axis and y-axis coordinates
@@ -117,7 +117,7 @@ class BandPlot:
         :params energy_range: range of energy to plot, its length equals to two
         :params label: band label. Default: ''
         :params color: band color. Default: 'black'
-        :params outfile: band picture file name. Default: 'band.pdf'
+        :params outfile: band picture file name. Default: 'band.png'
         """
 
         fig, ax = plt.subplots()
@@ -134,7 +134,7 @@ class BandPlot:
         plt.savefig(outfile)
 
     @classmethod
-    def singleplot(cls, datafile: str_PathLike, kptfile: str = [], efermi: float = 0, energy_range: Sequence[float] = [], label: str = None, color: str = None, outfile: str_PathLike = 'band.pdf'):
+    def singleplot(cls, datafile: str_PathLike, kptfile: str = [], efermi: float = 0, energy_range: Sequence[float] = [], label: str = None, color: str = None, outfile: str_PathLike = 'band.png'):
         """Plot band structure using data file
 
         :params datafile: string of band date file
@@ -143,7 +143,7 @@ class BandPlot:
         :params energy_range: range of energy to plot, its length equals to two
         :params label: band label. Default: ''
         :params color: band color. Default: 'black'
-        :params outfile: band picture file name. Default: 'band.pdf'
+        :params outfile: band picture file name. Default: 'band.png'
         """
 
         fig, ax = plt.subplots()
@@ -164,7 +164,7 @@ class BandPlot:
         plt.savefig(outfile)
 
     @classmethod
-    def multiplot(cls, datafile: muti_Path, kptfile: str = [], efermi: Sequence[float] = [], energy_range: Sequence[float] = [], label: Sequence[str] = None, color: Sequence[str] = None, outfile: str_PathLike = 'band.pdf'):
+    def multiplot(cls, datafile: muti_Path, kptfile: str = [], efermi: Sequence[float] = [], energy_range: Sequence[float] = [], label: Sequence[str] = None, color: Sequence[str] = None, outfile: str_PathLike = 'band.png'):
         """Plot more than two band structures using data file
 
         :params datafile: list of path of band date file 
@@ -173,7 +173,7 @@ class BandPlot:
         :params energy_range: range of energy to plot, its length equals to two
         :params label: list of band labels, its length equals to `filename`.
         :params color: list of band colors, its length equals to `filename`.
-        :params outfile: band picture file name. Default: 'band.pdf'
+        :params outfile: band picture file name. Default: 'band.png'
         """
 
         fig, ax = plt.subplots()
@@ -454,7 +454,7 @@ class DosPlot:
         return res, nsplit
 
     @classmethod
-    def plot(cls, tdosfile: str_PathLike = '', pdosfile: str_PathLike = '', efermi: float = 0, energy_range: Sequence[float] = [], dos_range: Sequence[float] = [], species: Union[Sequence[str], Dict[str, List[int]]] = [], tdosfig: str_PathLike = 'tdos.pdf', pdosfig: str_PathLike = 'pdos.pdf', prec: float = 0.01):
+    def plot(cls, tdosfile: str_PathLike = '', pdosfile: str_PathLike = '', efermi: float = 0, energy_range: Sequence[float] = [], dos_range: Sequence[float] = [], species: Union[Sequence[str], Dict[str, List[int]]] = [], tdosfig: str_PathLike = 'tdos.png', pdosfig: str_PathLike = 'pdos.png', prec: float = 0.01):
         """Plot total dos or partial dos, if both `tdosfile` and `pdosfile` set, it will ony read `tdosfile`
 
         :params tdosfile: string of TDOS data file

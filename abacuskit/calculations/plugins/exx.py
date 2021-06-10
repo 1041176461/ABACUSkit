@@ -30,7 +30,7 @@ from abacuskit.utils.typings import *
 class SetDimers(ABACUSCalculation):
     """Set and calculate dimers for off-site Auxiliary Basis Functions(ABFs)"""
 
-    def __init__(self, input_dict: dict, stru: typing.Optional[Stru], kpt: typing.Optional[Kpt], Nu: list, dimer_num: int, **kwargs) -> None:
+    def __init__(self, input_dict: dict, stru: typing.Optional[Stru], kpt: typing.Optional[Kpt], Nu: list, dimer_num: int=5, **kwargs) -> None:
         """Set input parameters of dimers calculation
 
         :params input_dict: dict of input parameters

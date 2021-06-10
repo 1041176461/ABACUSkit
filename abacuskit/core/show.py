@@ -40,7 +40,7 @@ class Show:
                 raise FileNotFoundError(f"No information to show!")
 
     @classmethod
-    def show_bandinfo(cls, datafile: Union[str_PathLike, muti_Path], kptfile: str_PathLike, efermi: Union[float, Sequence[float]] = None, energy_range: Sequence[float] = [], blabel: Union[str, Sequence[str]] = None, color: Union[str, Sequence[str]] = None, outfile: str_PathLike = "band.pdf"):
+    def show_bandinfo(cls, datafile: Union[str_PathLike, muti_Path], kptfile: str_PathLike, efermi: Union[float, Sequence[float]] = None, energy_range: Sequence[float] = [], blabel: Union[str, Sequence[str]] = None, color: Union[str, Sequence[str]] = None, outfile: str_PathLike = "band.png"):
         """Show band structure information
 
         :params datafile: path of band date file 
@@ -49,7 +49,7 @@ class Show:
         :params energy_range: range of energy to plot, its length equals to two
         :params blabel: band labels, its length equals to `filename`.
         :params color: band colors, its length equals to `filename`.
-        :params outfile: band picture file name. Default: 'band.pdf'
+        :params outfile: band picture file name. Default: 'band.png'
         """
 
         from abacuskit.postprocess.plot import BandPlot
@@ -62,7 +62,7 @@ class Show:
                                energy_range, blabel, color, outfile)
 
     @classmethod
-    def show_dosinfo(cls, tdosfile: str_PathLike = '', pdosfile: str_PathLike = '', efermi: float = 0, energy_range: Sequence[float] = [], dos_range: Sequence[float] = [], species: Union[Sequence[str], Dict[str, List[int]]] = [], tdosfig: str_PathLike = 'tdos.pdf', pdosfig: str_PathLike = 'pdos.pdf', prec: float = 0.01):
+    def show_dosinfo(cls, tdosfile: str_PathLike = '', pdosfile: str_PathLike = '', efermi: float = 0, energy_range: Sequence[float] = [], dos_range: Sequence[float] = [], species: Union[Sequence[str], Dict[str, List[int]]] = [], tdosfig: str_PathLike = 'tdos.png', pdosfig: str_PathLike = 'pdos.png', prec: float = 0.01):
         """Plot total dos or partial dos, if both `tdosfile` and `pdosfile` set, it will ony read `tdosfile`
 
         :params tdosfile: string of TDOS data file
@@ -93,7 +93,7 @@ class Show:
             energy_range = text.pop("energy_range", [])
             blabel = text.pop("blabel", None)
             color = text.pop("color", None)
-            outfile = text.pop("outfile", "band.pdf")
+            outfile = text.pop("outfile", "band.png")
             cls.show_bandinfo(filename, kptfile, efermi,
                               energy_range, blabel, color, outfile)
 
@@ -105,8 +105,8 @@ class Show:
             energy_range = text.pop("energy_range", [])
             dos_range = text.pop("dos_range", [])
             species = text.pop("species", [])
-            tdosfig = text.pop("tdosfig", "tdos.pdf")
-            pdosfig = text.pop("pdosfig", "pdos.pdf")
+            tdosfig = text.pop("tdosfig", "tdos.png")
+            pdosfig = text.pop("pdosfig", "pdos.png")
             prec = text.pop("prec", 0.01)
             cls.show_dosinfo(tdosfile, pdosfile, efermi,
                              energy_range, dos_range, species, tdosfig, pdosfig, prec)
