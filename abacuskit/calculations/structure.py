@@ -331,7 +331,7 @@ class Stru:
 
         return str(cf)
 
-    def write_cif(self, filename: str = "STRU.cif", fing_symmetry: bool = False):
+    def write_cif(self, filename: str = "STRU.cif", find_symmetry: bool = False):
         """write CIF file
 
         :params filename: absolute path of CIF file
@@ -339,7 +339,7 @@ class Stru:
         """
 
         with open(filename, 'w') as file:
-            file.write(self.get_cif(fing_symmetry))
+            file.write(self.get_cif(find_symmetry))
 
     def supercell_positions(self, kpt: list) -> Dict_str_list:
         """Return supercell atomic positions
