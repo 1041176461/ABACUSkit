@@ -1,7 +1,7 @@
 '''
 Date: 2021-02-12 11:57:16
 LastEditors: jiyuyang
-LastEditTime: 2021-04-23 16:46:29
+LastEditTime: 2021-06-11 19:46:03
 Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 '''
 
@@ -24,7 +24,7 @@ class PbsJobResource(NodeNumberJobResource):
         :return: defaultdict with the parsed parameters populated
         :raises ValueError: if the resources are invalid or incomplete
         """
-        resources = super().validate_resources(cls, **kwargs)
+        resources = super().validate_resources(**kwargs)
 
         if resources['num_cores_per_machine'] is not None and resources['num_cores_per_mpiproc'] is not None:
             if resources['num_cores_per_machine'] != resources['num_cores_per_mpiproc'] * resources['num_mpiprocs_per_machine']:
