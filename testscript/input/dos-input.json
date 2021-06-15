@@ -1,0 +1,9 @@
+{
+	"pdosfile" : "./OUT.test/PDOS",
+        "efermi" : 5.550787791343986,
+        "energy_range"  : [-5, 5],
+        "dos_range" : [0, 10],
+        "species" : ["Cs", "Ag", "In", "Cl"],
+        "pdosfig" : "scf-pdos.png",
+        "tdosfig" : "scf-tdos.png"
+}
