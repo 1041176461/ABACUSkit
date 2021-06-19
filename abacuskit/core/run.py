@@ -26,7 +26,8 @@ class Run:
         """
         for i in range(len(version)):
             subdst = os.path.join(dst, f"command_{i}")
-            os.makedirs(subdst)
+            if not os.path.exists(subdst):
+                os.makedirs(subdst)
         config_file = os.path.join(src, "config.json")
         if os.path.exists(config_file):
             commands, workflow = configure(config_file, version)
