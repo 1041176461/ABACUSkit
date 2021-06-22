@@ -117,6 +117,5 @@ def get_input_line(input_dict: dict):
     lines = []
     lines.append("INPUT_PARAMETERS")
     for key, value in input_dict.items():
-        if value:
-            lines.append(f"{key.ljust(30)}{value}")
+        lines.append(f"{key.ljust(30)}{value}")
     return '\n'.join(lines)
