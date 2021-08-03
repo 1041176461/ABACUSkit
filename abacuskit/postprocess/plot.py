@@ -523,6 +523,8 @@ class DosPlot:
             if momentum:
                 fig, ax = plt.subplots(
                     len(elements), 1, sharex=True, sharey=True)
+                if len(elements) == 1：
+                    ax = [ax]
                 plt.subplots_adjust(hspace=0)
                 for i, elem in enumerate(elements):
                     for j in momentum[i]:
