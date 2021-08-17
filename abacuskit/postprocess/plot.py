@@ -1,7 +1,7 @@
 '''
 Date: 2021-05-08 11:47:09
 LastEditors: jiyuyang
-LastEditTime: 2021-05-08 11:47:09
+LastEditTime: 2021-08-17 14:29:18
 Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 '''
 
@@ -191,8 +191,8 @@ class BandPlot:
         for i, file in enumerate(datafile):
             kpoints, energy = cls.read(file)
             vb, cb = cls.set_vcband(energy_minus_efermi(energy, efermi[i]))
-            energy_min = np.min(vb)
-            energy_max = np.max(cb)
+            energy_min = np.min(vb.band)
+            energy_max = np.max(cb.band)
             if energy_min > emin:
                 emin = energy_min
             if energy_max < emax:
@@ -523,7 +523,7 @@ class DosPlot:
             if momentum:
                 fig, ax = plt.subplots(
                     len(elements), 1, sharex=True, sharey=True)
-                if len(elements) == 1：
+                if len(elements) == 1:
                     ax = [ax]
                 plt.subplots_adjust(hspace=0)
                 for i, elem in enumerate(elements):
