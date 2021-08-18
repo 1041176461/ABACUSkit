@@ -1,7 +1,7 @@
 '''
 Date: 2021-03-29 21:35:30
 LastEditors: jiyuyang
-LastEditTime: 2021-05-16 14:30:15
+LastEditTime: 2021-08-18 21:10:07
 Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 '''
 
@@ -12,6 +12,12 @@ from typing import List, Union
 
 from abacuskit.utils.typings import *
 
+def remove_empty(a:list) -> list:
+    """Remove '' and [] in `a`"""
+    while '' in a:
+        a.remove('')
+    while [] in a:
+        a.remove([])
 
 def add_path(path: str_PathLike):
     """ Add a path into sys.path

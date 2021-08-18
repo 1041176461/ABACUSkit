@@ -1,7 +1,7 @@
 '''
 Date: 2021-05-08 11:47:09
 LastEditors: jiyuyang
-LastEditTime: 2021-08-17 14:29:18
+LastEditTime: 2021-08-18 21:25:07
 Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 '''
 
@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from abacuskit.utils.constants import get_angular_momentum_label
 from abacuskit.utils.IO import read_kpt
-from abacuskit.utils.tools import list_elem2str
+from abacuskit.utils.tools import list_elem2str, list_elem_2float, remove_empty
 from abacuskit.utils.typings import *
 from matplotlib import axes
 
@@ -327,74 +327,45 @@ class DosPlot:
             return np.split(dosdata, nsplit, axis=1)
 
         elif pdosfile:
-            e_list = []
+            def handle_data(data):
+                data.remove('')
+
+                def handle_elem(elem):
+                    elist = elem.split(' ')
+                    remove_empty(elist)  # `list` will be modified in function
+                    return elist
+                return list(map(handle_elem, data))
+
+            from lxml import etree
+            pdosdata = etree.parse(pdosfile)
+            root = pdosdata.getroot()
+            pdosdata = etree.parse(pdosfile)
+            root = pdosdata.getroot()
+            nspin = int(root.xpath('//nspin')[0].text.replace(' ', ''))
+            norbitals = int(root.xpath('//norbitals')[0].text.replace(' ', ''))
+            eunit = root.xpath('//energy_values/@units')[0].replace(' ', '')
+            e_list = root.xpath(
+                '//energy_values')[0].text.replace(' ', '').split('\n')
+            remove_empty(e_list)
             orbitals = []
-            with open(pdosfile, "r") as f:
-                for line in f:
-                    if re.match(r"</pdos>", line):
-                        break
-                    elif re.match(r"<nspin>[0-9]</nspin>", line):
-                        nspin = int(
-                            re.match(r"(<nspin>)([0-9])(</nspin>)", line).group(2))
-                        continue
-                    elif re.match(r"<norbitals>26</norbitals>", line):
-                        norbitals = int(
-                            re.match(r"(<norbitals>)([0-9]+)(</norbitals>)", line).group(2))
-                        continue
-                    elif re.match(r"<energy_values units=\"[a-zA-Z]+\">", line):
-                        e_unit = re.match(
-                            r"(<energy_values units=\")([a-zA-Z]+)(\">)", line).group(2)
-                        for line in f:
-                            if re.match("</energy_values>", line):
-                                break
-                            e = float(re.compile(
-                                r"\s+").split(line, maxsplit=1)[1].strip())
-                            e_list.append(e)
-                        npoints = len(e_list)
-                        continue
-                    elif re.match(r"<orbital", line):
-                        orb = OrderedDict()
-                        for line in f:
-                            if re.match(r"\s*index=\"\s*[0-9]+\"", line):
-                                orb['index'] = int(re.compile(
-                                    r"\s+").split(line, maxsplit=2)[-1].strip("\"\n"))
-                                continue
-                            elif re.match(r"\s*atom_index=\"\s*[0-9]+\"", line):
-                                orb['atom_index'] = int(re.compile(
-                                    r"\s+").split(line, maxsplit=2)[-1].strip("\"\n"))
-                                continue
-                            elif re.match(r"\s*species=\"\s*[A-Za-z]+\"", line):
-                                orb['species'] = re.compile(r"\=").split(
-                                    line, maxsplit=1)[-1].strip("\"\n")
-                                continue
-                            elif re.match(r"\s*l=\"\s*[0-9]+\"", line):
-                                orb['l'] = int(re.compile(
-                                    r"\s+").split(line, maxsplit=2)[-1].strip("\"\n"))
-                                continue
-                            elif re.match(r"\s*m=\"\s*[0-9]+\"", line):
-                                orb['m'] = int(re.compile(
-                                    r"\s+").split(line, maxsplit=2)[-1].strip("\"\n"))
-                                continue
-                            elif re.match(r"\s*z=\"\s*[0-9]+\"", line):
-                                orb['z'] = int(re.compile(
-                                    r"\s+").split(line, maxsplit=2)[-1].strip("\"\n"))
-                                continue
-                            elif re.match(r"<data>", line):
-                                orb['data'] = np.zeros(
-                                    (npoints, nspin), dtype=np.float32)
-                                for i, line in enumerate(f):
-                                    if re.match(r"</data>", line):
-                                        orbitals.append(orb)
-                                        orb = OrderedDict()
-                                        break
-                                    val = re.compile(r"\s").split(line)
-                                    while '' in val:
-                                        val.remove('')
-                                    orb['data'][i] = [
-                                        j for j in map(cls._val_to_zero, val)]
-                                continue
-                        continue
-            return np.reshape(e_list, newshape=(-1, 1)), orbitals
+            for i in range(norbitals):
+                orb = OrderedDict()
+                orb['index'] = int(root.xpath(
+                    '//orbital/@index')[i].replace(' ', ''))
+                orb['atom_index'] = int(root.xpath(
+                    '//orbital/@atom_index')[i].replace(' ', ''))
+                orb['species'] = root.xpath(
+                    '//orbital/@species')[i].replace(' ', '')
+                orb['l'] = int(root.xpath('//orbital/@l')[i].replace(' ', ''))
+                orb['m'] = int(root.xpath('//orbital/@m')[i].replace(' ', ''))
+                orb['z'] = int(root.xpath('//orbital/@z')[i].replace(' ', ''))
+                data = root.xpath('//data')[i].text.split('\n')
+                data = handle_data(data)
+                remove_empty(data)
+                orb['data'] = np.asarray(data, dtype=float)
+                orbitals.append(orb)
+
+            return np.reshape(e_list, newshape=(-1, 1)).astype(float), orbitals
 
     @classmethod
     def _set_figure(cls, ax: axes.Axes, energy_range: Sequence, dos_range: Sequence):
