@@ -1,7 +1,7 @@
 '''
 Date: 2021-05-12 00:33:51
 LastEditors: jiyuyang
-LastEditTime: 2021-05-12 00:33:51
+LastEditTime: 2021-08-21 21:34:34
 Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 '''
 
@@ -14,20 +14,36 @@ Hartree_TO_eV = physical_constants["Hartree energy in eV"][0]
 Rydberg_TO_eV = physical_constants["Rydberg constant times hc in eV"]
 
 
-def get_angular_momentum_label(index: int) -> str:
-    """Atomic orbital angular momentum label from index
+angular_momentum_label = ['s', 'p', 'd', 'f', 'g']
 
-    :params index: 0 or 1 or 2 or 3
+
+def get_angular_momentum_label(l_index: int) -> str:
+    """Atomic orbital angular momentum label from l_index
+
+    :params l_index: 0 or 1 or 2 or 3 or 4
     """
 
-    if index == 0:
-        return 's'
-    elif index == 1:
-        return 'p'
-    elif index == 2:
-        return 'd'
-    elif index == 3:
-        return 'f'
+    return angular_momentum_label[l_index]
+
+
+angular_momentum_name = [
+    ['s'],
+    ['px', 'py', 'pz'],
+    ['d3z^2-r^2', 'dxy', 'dxz', 'dx^2-y^2', 'dyz'],
+    ['f5z^2-3r^2', 'f5xz^2-xr^2', 'f5yz^2-yr^2',
+        'fzx^2-zy^2', 'fxyz', 'fx^3-3*xy^2', 'f3yx^2-y^3'],
+    ['g1', 'g2', 'g3', 'g4', 'g5', 'g6', 'g7', 'g8', 'g9']
+]
+
+
+def get_angular_momentum_name(l_index: int, m_index: int) -> str:
+    """Atomic orbital angular momentum name from l_index and m_index
+
+    :params l_index: 0 or 1 or 2 or 3 or 4
+    :params m_index: 0 ... 2*l_index
+    """
+
+    return angular_momentum_name[l_index][m_index]
 
 
 def get_angular_momentum_index(label: str) -> int:
@@ -44,6 +60,8 @@ def get_angular_momentum_index(label: str) -> int:
         return 2
     elif label == 'f':
         return 3
+    elif label == 'g':
+        return 4
 
 LatticeType = {
     'P' : 'primitive',

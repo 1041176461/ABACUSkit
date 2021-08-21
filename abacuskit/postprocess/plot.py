@@ -1,7 +1,7 @@
 '''
 Date: 2021-05-08 11:47:09
 LastEditors: jiyuyang
-LastEditTime: 2021-08-18 21:25:07
+LastEditTime: 2021-08-21 21:34:15
 Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 '''
 
@@ -11,9 +11,9 @@ from typing import Dict, List, Sequence, Tuple, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
-from abacuskit.utils.constants import get_angular_momentum_label
+from abacuskit.utils.constants import get_angular_momentum_label, get_angular_momentum_name
 from abacuskit.utils.IO import read_kpt
-from abacuskit.utils.tools import list_elem2str, list_elem_2float, remove_empty
+from abacuskit.utils.tools import list_elem2str, remove_empty
 from abacuskit.utils.typings import *
 from matplotlib import axes
 
@@ -425,7 +425,7 @@ class DosPlot:
         return res, nsplit
 
     @classmethod
-    def plot(cls, tdosfile: str_PathLike = '', pdosfile: str_PathLike = '', efermi: float = 0, energy_range: Sequence[float] = [], dos_range: Sequence[float] = [], species: Union[Sequence[str], Dict[str, List[int]]] = [], tdosfig: str_PathLike = 'tdos.png', pdosfig: str_PathLike = 'pdos.png', prec: float = 0.01):
+    def plot(cls, tdosfile: str_PathLike = '', pdosfile: str_PathLike = '', efermi: float = 0, energy_range: Sequence[float] = [], dos_range: Sequence[float] = [], species: Union[Sequence[str], Dict[str, List[int]], Dict[str, Dict[str, List[int]]]] = [], tdosfig: str_PathLike = 'tdos.png', pdosfig: str_PathLike = 'pdos.png', prec: float = 0.01):
         """Plot total dos or partial dos, if both `tdosfile` and `pdosfile` set, it will ony read `tdosfile`
 
         :params tdosfile: string of TDOS data file
@@ -446,13 +446,11 @@ class DosPlot:
             plt.savefig(tdosfig)
 
         elif pdosfile and species:
-            elements = []
-            momentum = []
             if isinstance(species, (list, tuple)):
                 elements = species
             elif isinstance(species, dict):
                 elements = list(species.keys())
-                momentum = list(species.values())
+                l = list(species.values())
             if not elements:
                 raise TypeError(
                     "Only when `pdosfile` and `species` are both set, it will plot PDOS.")
@@ -491,29 +489,50 @@ class DosPlot:
             plt.savefig(tdosfig)
 
             # PDOS
-            if momentum:
+            if l:
                 fig, ax = plt.subplots(
                     len(elements), 1, sharex=True, sharey=True)
                 if len(elements) == 1:
                     ax = [ax]
                 plt.subplots_adjust(hspace=0)
                 for i, elem in enumerate(elements):
-                    for j in momentum[i]:
-                        dos = np.zeros_like(
-                            orbitals[0]["data"], dtype=np.float32)
-                        for orb in orbitals:
-                            if orb["species"] == elem and orb["l"] == j:
-                                dos += orb["data"]
-                        if nsplit == 1:
-                            ax[i].plot(energy_f, dos, lw=0.8, linestyle='-',
-                                       label=f'{elem}-{get_angular_momentum_label(j)}')
-                        elif nsplit == 2:
-                            dos_up, dos_dw = np.split(dos, nsplit, axis=1)
-                            ax[i].plot(energy_f, dos_up, lw=0.8, linestyle="-",
-                                       label=f"{elem}-{get_angular_momentum_label(j)}"+r"$\uparrow$")
-                            dos_dw = -dos_dw
-                            ax[i].plot(energy_f, dos_dw, lw=0.8, linestyle="--",
-                                       label=f"{elem}-{get_angular_momentum_label(j)}"+r"$\downarrow$")
+                    if isinstance(l[i], dict):
+                        for ang, mag in l[i].items():
+                            l_index = int(ang)
+                            for m_index in mag:
+                                dos = np.zeros_like(
+                                    orbitals[0]["data"], dtype=np.float32)
+                                for orb in orbitals:
+                                    if orb["species"] == elem and orb["l"] == l_index and orb["m"] == m_index:
+                                        dos += orb["data"]
+                                if nsplit == 1:
+                                    ax[i].plot(energy_f, dos, lw=0.8, linestyle='-',
+                                               label=f'{elem}-{get_angular_momentum_name(l_index, m_index)}')
+                                elif nsplit == 2:
+                                    dos_up, dos_dw = np.split(
+                                        dos, nsplit, axis=1)
+                                    ax[i].plot(energy_f, dos_up, lw=0.8, linestyle="-",
+                                               label=f"{elem}-{get_angular_momentum_name(l_index, m_index)}"+r"$\uparrow$")
+                                    dos_dw = -dos_dw
+                                    ax[i].plot(energy_f, dos_dw, lw=0.8, linestyle="--",
+                                               label=f"{elem}-{get_angular_momentum_name(l_index, m_index)}"+r"$\downarrow$")
+                    elif isinstance(l[i], list):
+                        for l_index in l[i]:
+                            dos = np.zeros_like(
+                                orbitals[0]["data"], dtype=np.float32)
+                            for orb in orbitals:
+                                if orb["species"] == elem and orb["l"] == l_index:
+                                    dos += orb["data"]
+                            if nsplit == 1:
+                                ax[i].plot(energy_f, dos, lw=0.8, linestyle='-',
+                                           label=f'{elem}-{get_angular_momentum_label(l_index)}')
+                            elif nsplit == 2:
+                                dos_up, dos_dw = np.split(dos, nsplit, axis=1)
+                                ax[i].plot(energy_f, dos_up, lw=0.8, linestyle="-",
+                                           label=f"{elem}-{get_angular_momentum_label(l_index)}"+r"$\uparrow$")
+                                dos_dw = -dos_dw
+                                ax[i].plot(energy_f, dos_dw, lw=0.8, linestyle="--",
+                                           label=f"{elem}-{get_angular_momentum_label(l_index)}"+r"$\downarrow$")
 
                     cls._set_figure(ax[i], energy_range, dos_range)
 

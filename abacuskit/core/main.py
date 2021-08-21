@@ -1,7 +1,7 @@
 '''
 Date: 2021-03-18 14:37:53
 LastEditors: jiyuyang
-LastEditTime: 2021-04-25 10:35:11
+LastEditTime: 2021-08-21 10:38:34
 Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 '''
 import argparse
@@ -46,7 +46,7 @@ def main():
     # Convert
     parser_convert = subparsers.add_parser(
         'convert', help='convert file from one format to another')
-    parser_convert.add_argument('-file', '--file', dest='file', type=str,
+    parser_convert.add_argument('-f', '--file', dest='file', type=str,
                                 default=None, help="convert structure file format to another.")
     parser_convert.set_defaults(func=Convert().convert_cmdline)
 
