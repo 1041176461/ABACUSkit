@@ -1,7 +1,7 @@
 '''
 Date: 2021-04-28 21:11:37
 LastEditors: jiyuyang
-LastEditTime: 2021-04-29 23:32:04
+LastEditTime: 2021-09-06 15:38:29
 Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 '''
 
@@ -147,7 +147,7 @@ class SetDimers(JobCalculation):
             file.write(textwrap.dedent(f"""\
                     INPUT_ORBITAL_INFORMATION
                     <SPHERICAL_BESSEL>
-                    0           // smooth or not
+                    1           // smooth or not
                     0.1         // sigma
                     {self.input_dict["ecutwfc"]}          // energy cutoff for spherical bessel functions(Ry)
                     {self.rcut}          // cutoff of wavefunctions(a.u.)
