@@ -140,7 +140,7 @@ class SetDimers(JobCalculation):
         with open(folder/"INPUTw", "w") as file:
             file.write(textwrap.dedent(f"""\
                     WANNIER_PARAMETERS
-                    rcut 10
+                    rcut {self.rcut}
                     out_spillage 2
                     """))
         with open(folder/"INPUTs", "w") as file:
@@ -148,7 +148,7 @@ class SetDimers(JobCalculation):
                     INPUT_ORBITAL_INFORMATION
                     <SPHERICAL_BESSEL>
                     1           // smooth or not
-                    0.1         // sigma
+                    {self.input_dict["sigma"]}         // sigma
                     {self.input_dict["ecutwfc"]}          // energy cutoff for spherical bessel functions(Ry)
                     {self.rcut}          // cutoff of wavefunctions(a.u.)
                     1.0e-12     // tolerence

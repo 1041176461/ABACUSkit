@@ -1,7 +1,7 @@
 '''
 Date: 2021-03-29 21:33:09
 LastEditors: jiyuyang
-LastEditTime: 2021-04-23 16:38:39
+LastEditTime: 2021-09-28 09:28:51
 Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 '''
 
@@ -53,7 +53,7 @@ class Show:
         :params outfile: band picture file name. Default: 'band.png'
         """
 
-        from abacus_plot.band import BandPlot
+        from abacuskit.postprocess.plot import BandPlot
 
         if isinstance(datafile, (str, PathLike)):
             BandPlot.singleplot(datafile, kptfile, efermi,
@@ -76,7 +76,7 @@ class Show:
         :params prec: dos below this value thought to be zero. Default: 0.01
         """
 
-        from abacus_plot.dos import DosPlot
+        from abacuskit.postprocess.plot import DosPlot
 
         DosPlot().plot(tdosfile, pdosfile, efermi, energy_range,
                        dos_range, shift, species, tdosfig, pdosfig, prec)
