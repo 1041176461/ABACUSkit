@@ -58,7 +58,7 @@ class RELAX(SCF):
 
         super().__init__(input_dict, stru, kpt, **kwargs)
         self.input_dict["calculation"] = "relax"
-        self.input_dict["force"] = "1"
+        self.input_dict["cal_force"] = "1"
         self.logfile = "OUT.test/running_relax.log"
 
     def _parse(self, **kwargs) -> dict:
@@ -101,7 +101,7 @@ class CELL_RELAX(RELAX):
 
         super().__init__(input_dict, stru, kpt, **kwargs)
         self.input_dict["calculation"] = "cell-relax"
-        self.input_dict["stress"] = "1"
+        self.input_dict["cal_stress"] = "1"
         self.logfile = "OUT.test/running_cell-relax.log"
 
     def _parse(self, **kwargs) -> dict:

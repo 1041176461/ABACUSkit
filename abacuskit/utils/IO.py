@@ -27,7 +27,7 @@ def read_cif(filename: str_PathLike, pps: muti_Dict = [{}], orbitals: muti_Dict 
     :params filename: name of cif file
     """
 
-    from warnings import UserWarning
+
     raise UserWarning("Can only read direct positions, generating equivalent atoms based on site symmetry or Wackoff positions are not supported now")
     from CifFile import ReadCif
     strulist = []
@@ -58,9 +58,9 @@ def read_cif(filename: str_PathLike, pps: muti_Dict = [{}], orbitals: muti_Dict 
         la = float(data["_cell_length_a"].split('(')[0])
         lb = float(data["_cell_length_b"].split('(')[0])
         lc = float(data["_cell_length_c"].split('(')[0])
-        alpha = float(data["_cell_angle_alpha"])
-        beta = float(data["_cell_angle_beta"])
-        gamma = float(data["_cell_angle_gamma"])
+        alpha = float(data["_cell_angle_alpha"].split('(')[0])
+        beta = float(data["_cell_angle_beta"].split('(')[0])
+        gamma = float(data["_cell_angle_gamma"].split('(')[0])
 
         if "_symmetry_cell_setting" in data.keys():
             crystal_system = data["_symmetry_cell_setting"]
@@ -178,7 +178,12 @@ def read_stru(ntype: int, stru_file: str_PathLike) -> Stru:
                 for i in range(na):
                     line = skip_notes(file.readline())
                     R_tmp.append(list_elem_2float(line.split()[:3]))
-                    move_tmp.append(list_elem_2int(line.split()[3:]))
+                    if len(line.split()[3:]) == 3:
+                        move_tmp.append(list_elem_2int(line.split()[3:]))
+                    elif len(line.split()[3:]) == 4:
+                        move_tmp.append(list_elem_2int(line.split()[4:]))
+                    else:
+                        move_tmp.append([1, 1, 1])
                 if ctype == "Direct":
                     scaled_positions[elem] = R_tmp
                 elif ctype == "Cartesian":

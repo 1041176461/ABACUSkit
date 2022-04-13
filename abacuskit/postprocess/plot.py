@@ -1,7 +1,7 @@
 '''
 Date: 2021-05-08 11:47:09
 LastEditors: jiyuyang
-LastEditTime: 2021-08-26 14:57:52
+LastEditTime: 2021-11-20 17:00:35
 Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 '''
 
@@ -348,8 +348,6 @@ class DosPlot:
             from lxml import etree
             pdosdata = etree.parse(pdosfile)
             root = pdosdata.getroot()
-            pdosdata = etree.parse(pdosfile)
-            root = pdosdata.getroot()
             nspin = int(root.xpath('//nspin')[0].text.replace(' ', ''))
             norbitals = int(root.xpath('//norbitals')[0].text.replace(' ', ''))
             eunit = root.xpath('//energy_values/@units')[0].replace(' ', '')
@@ -393,7 +391,6 @@ class DosPlot:
         # x-axis
         if energy_range:
             ax.set_xlim(energy_range[0], energy_range[1])
-        ax.set_xlabel(r"$E-E_{fermi}(eV)$")
 
         # others
         ax.axvline(0, linestyle="--", c='b', lw=1.0)
@@ -510,9 +507,10 @@ class DosPlot:
             if l:
                 fig, ax = plt.subplots(
                     len(elements), 1, sharex=True, sharey=True)
+                plt.xlabel(r"$E-E_{fermi}(eV)$")
                 if len(elements) == 1:
                     ax = [ax]
-                plt.subplots_adjust(hspace=0)
+                plt.subplots_adjust(hspace=0.2)
                 for i, elem in enumerate(elements):
                     if isinstance(l[i], dict):
                         for ang, mag in l[i].items():
