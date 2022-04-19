@@ -186,6 +186,23 @@ class Cal(Pre):
         os.system(submit_command)
         os.chdir('../')
 
+    def check_force(self, filename):
+        count = 1
+        with open(filename, 'r') as file:
+            for line in file:
+                if re.search(r"TOTAL ATOM NUMBER = [0-9]+", line):
+                    natom = int(re.search("[0-9]+", line).group())
+                    force = np.zeros((natom, 3))
+                if re.search("TOTAL-FORCE \(eV/Angstrom\)", line):
+                    for i in range(4):
+                        file.readline()
+                    for i in range(natom):
+                        _, fx, fy, fz = file.readline().split()
+                        force[i] = (float(fx), float(fy), float(fz))
+                    print(f"Variance of force in step {count}: {np.var(force)}")
+                    count += 1
+        return np.var(force)
+
     def zpl(self, glog, elog):
         with open(glog, 'r') as f1, open(elog, 'r') as f2:
             gE = search_line(f1, 'E_KohnSham')
